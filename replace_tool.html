@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<body>
+    文章A([[A]])<br>
+    <input class="parts" type="text" size=30 value="JR京都"/><br>
+    文章B([[B]])<br>
+    <input class="parts" type="text" size=30 value="新快速"/><br>
+    文章C([[C]])<br>
+    <input class="parts" type="text" size=30 value="敦賀"/><br>
+    元となる文章<br>
+    <input id="base" type="text" size=30 value="この列車は[[A]]線[[B]][[C]]行きです。"/><br>
+    変換結果<br>
+    <span id="result"></span><br>
+    <input type="button" value="実行" onclick="action()"/>
+    <script>
+        function action() {
+            const baseText = document.getElementById("base").value;
+            const placeholders = ["[[A]]", "[[B]]", "[[C]]"];
+            let resultText = baseText;
+            const parts = document.getElementsByClassName("parts");
+            console.log(parts.length);
+            for (let i = 0; i < parts.length; i++) {
+                resultText = resultText.replace(placeholders[i], parts[i].value);
+                console.log(resultText);
+            }
+            console.log(resultText);
+            document.getElementById("result").innerText = resultText;
+        }
+    </script>
+</body>
+</html>
