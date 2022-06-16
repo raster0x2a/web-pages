@@ -9,8 +9,8 @@
     <input class="parts" type="text" size=30 value="敦賀"/><br>
     元となる文章<br>
     <input id="base" type="text" size=30 value="この列車は[[A]]線[[B]][[C]]行きです。"/><br>
-    変換結果<br>
-    <span id="result"></span><br>
+    変換結果<input type="button" value="copy" onclick="copy()"/><br>
+    <textarea id="result" cols="30" rows="5"></textarea><br>
     <input type="button" value="実行" onclick="action()"/>
     <script>
         function action() {
@@ -24,7 +24,13 @@
                 console.log(resultText);
             }
             console.log(resultText);
-            document.getElementById("result").innerText = resultText;
+            document.getElementById("result").value = resultText;
+        }
+
+        function copy() {
+            let result = document.getElementById("result");
+            result.select();
+            document.execCommand("copy");
         }
     </script>
 </body>
