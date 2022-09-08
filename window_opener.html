@@ -1,3 +1,8 @@
 <script>
-window.opener.location = "http://example.com";
+if (window.opener) {
+  console.log("ng");
+  opener.location='http://example.com';
+} else {
+  console.log("ok");
+}
 </script>
