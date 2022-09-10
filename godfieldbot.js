@@ -70,11 +70,11 @@ async function game(){
         // ゲーム終了
         if (document.getElementsByXPath(xp["勝利"])[0] !== undefined) {
             if (document.getElementsByXPath(xp["勝者名"])[0] === undefined) {
-                localStorage.else = localStorage.else ? Integer(localStorage.else) + 1 : 0;
+                localStorage.else = localStorage.else ? Number(localStorage.else) + 1 : 0;
             } else if (document.getElementsByXPath(xp["勝者名"])[0].innerText === "R*Bot") {
-                localStorage.win = localStorage.win ? Integer(localStorage.win) + 1 : 0;
+                localStorage.win = localStorage.win ? Number(localStorage.win) + 1 : 0;
             } else {
-                localStorage.lose = localStorage.lose ? Integer(localStorage.lose) + 1 : 0;
+                localStorage.lose = localStorage.lose ? Number(localStorage.lose) + 1 : 0;
             }
             await _sleep(200);
             document.getElementsByXPath(xp["戻る"])[0].click();
