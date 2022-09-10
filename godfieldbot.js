@@ -1,3 +1,5 @@
+
+
 document.getElementsByXPath = function(expression, parentElement) {
     let r = [];
     let x = document.evaluate(expression, parentElement || document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
@@ -40,6 +42,7 @@ const xp = {
     "カードリスト":  "/html/body/div/div/div/div[3]/div[2]/div[7]",
     "勝利":         "/html/body/div/div/div/div[3]/div[2]/div[3]/div[1]/span",
     "戻る":         "/html/body/div/div/div/div[1]/div[2]/div[2]",
+    "勝者名":       "/html/body/div/div/div/div[3]/div[2]/div[3]/div[2]/div/span",
 }
 
 function selectCard(index){
@@ -66,6 +69,14 @@ async function game(){
         await _sleep(500);
         // ゲーム終了
         if (document.getElementsByXPath(xp["勝利"])[0] !== undefined) {
+            if (document.getElementsByXPath(xp["勝者名"])[0] === undefined) {
+                localStorage.else = localStorage.else ? Integer(localStorage.else) + 1 : 0;
+            } else if (document.getElementsByXPath(xp["勝者名"])[0].innerText === "R*Bot") {
+                localStorage.win = localStorage.win ? Integer(localStorage.win) + 1 : 0;
+            } else {
+                localStorage.lose = localStorage.lose ? Integer(localStorage.lose) + 1 : 0;
+            }
+            await _sleep(200);
             document.getElementsByXPath(xp["戻る"])[0].click();
             return;
         } else if (document.getElementsByXPath(xp["生誕する"])[0] !== undefined) {
