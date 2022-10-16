@@ -2,7 +2,6 @@
     <style>
         span {
             background-color: black;
-            color: transparent;
             user-select: none;
             font-family: monospace, serif;
         }
@@ -18,85 +17,93 @@
     <div class="h1">
         <span id="num" class="spoiler"></span>
         <span id="msg" class="spoiler"></span>
+        <button onclick="change()">CHANGE</button>
     </div>
+    
 </main>
 <script>
-    const httpStatus = [
-        "100 Continue",
-        "101 Switching Protocols",
-        "102 Processing",
-        "103 Early Hints",
-        "200 OK",
-        "201 Created",
-        "202 Accepted",
-        "203 Non-Authoritative Information",
-        "204 No content",
-        "205 Reset Content",
-        "206 Partial Content",
-        "207 Multi-Status",
-        "208 Already Reported",
-        "209 IM Used",
-        "300 Multiple Choice",
-        "301 Moved Permanently",
-        "302 Found",
-        "303 See Other",
-        "304 Not Modified",
-        "305 Use Proxy",
-        "306 (予約)",
-        "307 Temporary Redirect",
-        "308 Permanent Redirect",
-        "400 Bad Request",
-        "401 Unauthorized",
-        "402 Payment Required (予約)",
-        "403 Forbidden",
-        "404 Not Found",
-        "405 Method Not Allowed",
-        "406 Not Accepted",
-        "407 Proxy Authentication Required",
-        "408 Request Timed Out",
-        "409 Conflict",
-        "410 Gone",
-        "411 Length Required",
-        "412 Precondition Failed",
-        "413 Payload Too Large",
-        "414 URI Too Long",
-        "415 Unsupported Media Type",
-        "416 Range Not Satisfiable",
-        "417 Expectation Failed",
-        "418 I'm a teapot (予約)",
-        "421 Misdirected Request",
-        "422 Unprocessable",
-        "423 Locked",
-        "424 Failed Dependency",
-        "425 Too Early",
-        "426 Upgrade Required",
-        "428 Precondition Required",
-        "429 Too Many Requests",
-        "431 Request Header Fields Too Large",
-        "451 Unavailable For Legal Reasons",
-        "500 Internal Server Error",
-        "501 Not Implemented",
-        "502 Bad Gateway",
-        "503 Service Unavailable",
-        "504 Gateway Timeout",
-        "505 HTTP Version Not Supported",
-        "506 Variant Also Negotiates",
-        "507 Insufficient Storage",
-        "508 Loop Detected",
-        "510 Not Extended",
-        "511 Network Authentication Required",
-    ];
-    const index = Math.floor(Math.random() * httpStatus.length);
-    const statusNum = httpStatus[index].match(/^\d{3}/)[0];
-    const statusMsg = httpStatus[index].match(/^\d{3} (.*)/)[1].padEnd(32, ".");
-    document.getElementById("num").innerText = statusNum;
-    document.getElementById("msg").innerText = statusMsg;
+    function change() {
+        const httpStatus = [
+            "100 Continue",
+            "101 Switching Protocols",
+            "102 Processing",
+            "103 Early Hints",
+            "200 OK",
+            "201 Created",
+            "202 Accepted",
+            "203 Non-Authoritative Information",
+            "204 No content",
+            "205 Reset Content",
+            "206 Partial Content",
+            "207 Multi-Status",
+            "208 Already Reported",
+            "209 IM Used",
+            "300 Multiple Choice",
+            "301 Moved Permanently",
+            "302 Found",
+            "303 See Other",
+            "304 Not Modified",
+            "305 Use Proxy",
+            "306 (予約)",
+            "307 Temporary Redirect",
+            "308 Permanent Redirect",
+            "400 Bad Request",
+            "401 Unauthorized",
+            "402 Payment Required (予約)",
+            "403 Forbidden",
+            "404 Not Found",
+            "405 Method Not Allowed",
+            "406 Not Accepted",
+            "407 Proxy Authentication Required",
+            "408 Request Timed Out",
+            "409 Conflict",
+            "410 Gone",
+            "411 Length Required",
+            "412 Precondition Failed",
+            "413 Payload Too Large",
+            "414 URI Too Long",
+            "415 Unsupported Media Type",
+            "416 Range Not Satisfiable",
+            "417 Expectation Failed",
+            "418 I'm a teapot (予約)",
+            "421 Misdirected Request",
+            "422 Unprocessable",
+            "423 Locked",
+            "424 Failed Dependency",
+            "425 Too Early",
+            "426 Upgrade Required",
+            "428 Precondition Required",
+            "429 Too Many Requests",
+            "431 Request Header Fields Too Large",
+            "451 Unavailable For Legal Reasons",
+            "500 Internal Server Error",
+            "501 Not Implemented",
+            "502 Bad Gateway",
+            "503 Service Unavailable",
+            "504 Gateway Timeout",
+            "505 HTTP Version Not Supported",
+            "506 Variant Also Negotiates",
+            "507 Insufficient Storage",
+            "508 Loop Detected",
+            "510 Not Extended",
+            "511 Network Authentication Required",
+        ];
+        const index = Math.floor(Math.random() * httpStatus.length);
+        const statusNum = httpStatus[index].match(/^\d{3}/)[0];
+        const statusMsg = httpStatus[index].match(/^\d{3} (.*)/)[1].padEnd(32, ".");
+        document.getElementById("num").innerText = statusNum;
+        document.getElementById("msg").innerText = statusMsg;
+
+        document.getElementById("num").style.backgroundColor = "black";
+        document.getElementById("msg").style.backgroundColor = "black";
+    }
+
+    change();
     for (let target of document.getElementsByClassName("spoiler")) {
         target.addEventListener("click", function(e){
             console.log(e.target.style.color)
             console.log(e.target.style.backgroundColor)
-            e.target.style.color = ["transparent", ""].includes(e.target.style.color) ? "black" : "transparent";
-            e.target.style.backgroundColor = ["black", ""].includes(e.target.style.backgroundColor) ? "white" : "black";
+            e.target.style.backgroundColor = e.target.style.backgroundColor === "black" ? "white" : "black";
         });
     }
 
