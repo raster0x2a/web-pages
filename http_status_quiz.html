@@ -84,9 +84,10 @@
     document.getElementById("msg").innerText = statusMsg;
     for (let target of document.getElementsByClassName("spoiler")) {
         target.addEventListener("click", function(e){
-            e.target.style.color = e.target.style.color == "transparent" ? "black" : "transparent";
-            e.target.style.backgroundColor = e.target.style.backgroundColor == "black" ? "white" : "black";
+            console.log(e.target.style.color)
+            console.log(e.target.style.backgroundColor)
+            e.target.style.color = ["transparent", ""].includes(e.target.style.color) ? "black" : "transparent";
+            e.target.style.backgroundColor = ["black", ""].includes(e.target.style.backgroundColor) ? "white" : "black";
         });
     }
-
 </script>
