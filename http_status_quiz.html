@@ -4,13 +4,22 @@
             background-color: black;
             color: transparent;
             user-select: none;
+            font-family: monospace, serif;
+        }
+        .h1 {
+            font-size: xx-large;
+        }
+        main {
+            /* text-align: center; */
         }
     </style>
 </head>
-<h1>
-    <span id="num" class="spoiler"></span>
-    <span id="msg" class="spoiler"></span>
-</h1>
+<main>
+    <div class="h1">
+        <span id="num" class="spoiler"></span>
+        <span id="msg" class="spoiler"></span>
+    </div>
+</main>
 <script>
     const httpStatus = [
         "100 Continue",
@@ -79,7 +88,7 @@
     ];
     const index = Math.floor(Math.random() * httpStatus.length);
     const statusNum = httpStatus[index].match(/^\d{3}/)[0];
-    const statusMsg = httpStatus[index].match(/^\d{3} (.*)/)[1];
+    const statusMsg = httpStatus[index].match(/^\d{3} (.*)/)[1].padEnd(32, ".");
     document.getElementById("num").innerText = statusNum;
     document.getElementById("msg").innerText = statusMsg;
     for (let target of document.getElementsByClassName("spoiler")) {
@@ -90,4 +99,5 @@
             e.target.style.backgroundColor = ["black", ""].includes(e.target.style.backgroundColor) ? "white" : "black";
         });
     }
+
 </script>
