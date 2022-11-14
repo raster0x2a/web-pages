@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<!-- https://hiraocafe.com/note/zenkashiki-gacha.html の超級問題一覧を表示するページです。何か問題があれば削除します。 -->
+<html>
+<head>
+    <style>
+        .prob {
+            border: 2px solid gray;
+            border-radius: 5px;
+            margin: 1em;
+            padding: 1em;
+        }
+    </style>
+</head>
+<body>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [['$','$'], ['\\(','\\)']],
+            processEscapes: true
+        },
+        CommonHTML: { matchFontHeight: false, undefinedFamily:"sans-serif"}
+    });
+</script>
+<script async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML">
+</script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+<main>
+    <div id="field"></div>
+</main>
+
+<script>
+    // 上級と超級の問題と解答データ．上級23種類，超級23種類．ただし上級は確率を3倍．つまり0番目から56番目までが上級．57番目から74番目までが超級．75，76番目がガウス超級．77,78，79番目が上級(連立)，80,81番目が超級(連立)，82番目から90番目までが上級(和)，91番目が超級(和)．
+    let menu3 = [
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=1，$</span><span>$a_{2n}=2a_{2n-1}+1，$</span><span>$a_{2n+1}=a_{2n}+n$</span></span>", // 超級1，rand3=57
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=0，$</span><span>$a_{2}=1，$</span><span>$a_{3}=2，$<span>$a_{n+3}=6a_{n+2}-12a_{n+1}+8a_{n}$</span></span>", // 超級2，rand3=58
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=2，$</span><span>$na_{n+1}=a_{n}+n^{2}$</span></span>", // 超級3，白里さん寄贈，rand3=59
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=3，$</span><span>$a_{2}=1，$</span><span>$a_{n+2}-a_{n+1}+a_{n}=2$</span></span>", // 超級4，とますさん寄贈
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=1，$<span>$a_{n+1}=\\dfrac{_{n+1}\\hspace{-0.3mm}{\\rm C}_{2}}{a_{n}}$</span>", // 超級5，とますさん寄贈，rand3=61
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=1，$<span>$a_{2}=3，$<span>$a_{n+2}^{4}a_{n+1}^{4}-2^{n+1}a_{n+2}^{2}a_{n+1}^{2}=4a_{n+1}^{4}a_{n}^{4}-2^{n+2}a_{n+1}^{2}a_{n}^{2}$</span>", // 超級6，りーくーとさん寄贈，rand3=62
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=1，$</span><span>$\\displaystyle a_{n+1}= \\sum_{k=1}^{n}2ka_{k}+2$</span></span>", // 超級7，白里さん寄贈
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=1，$</span><span>$a_{2}=2，$</span><span>$\\dfrac{1}{a_{n+2}}-\\dfrac{1}{a_{n+1}}+\\dfrac{1}{(n+2)a_{n}}=0$</span></span>", // 超級8，白里さん寄贈
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=\\dfrac{1}{\\sqrt{6}-\\sqrt{2}}，$</span><span>$a_{n+1}=-1+2a_{n}^2$</span></span>", // 超級9，abachaさん寄贈
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=\\sqrt{3}，$</span><span>$a_{n+1}=\\dfrac{a_{n}+1}{1-a_{n}}$</span></span>", // 超級10，しんのす毛さん寄贈，rand3=66
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=1，$</span><span>$\\dfrac{1}{a_{n+1}}=6a_{1}a_{2}\\cdots a_{n}+\\dfrac{1}{a_{1}a_{2}\\cdots a_{n}}+6$</span></span>", // 超級11，主任さん寄贈，rand3=67
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=1，$</span><span>$a_{n}>0，$</span><span>$a_{n+1}^{2}a_{n}+2a_{n+1}-a_{n}=0$</span></span>", // 超級12，雨乃松さん寄贈，rand3=68
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation warning gaming\"><span>$a_{1}=3$</span><span>$，$</span><span>$a_{n+1}=a_{n}^{2}-2$</span></span>", // 超級13，warning，うめぼしさん寄贈，rand3=69
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation warning gaming\"><span>$a_{1}=\\dfrac{8}{3}，$</span><span>$a_{n+1}=a_{n}^{3}+3a_{n}$</span></span>", // 超級14，warning，全理さん寄贈，rand3=70
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation warning gaming\"><span>$a_{1}=2，$</span><span>$a_{n+1}=\\dfrac{a_{n}^{2}+2}{2a_{n}}$</span></span>", // 超級15，warning，しんのす毛さん寄贈，rand3=71
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation warning gaming\"><span>$a_{1}=0，$</span><span>$a_{2n}=2a_{n}，$</span><span>$a_{2n+1}=2a_{n}+1$</span></span>", // 超級16，warning，白里さん寄贈，rand3=72
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation danger gaming\"><span>$a_{1}=1，$</span><span>$a_{2}=\\dfrac{1}{4}，$</span><span>$a_{n}\\neq \\dfrac{1}{2}，$</span><span>$2a_{n+1}^{2}-2a_{n}a_{n+2}-2a_{n+1}+a_{n}+a_{n+2}$</span> <span>$=-\\dfrac{3}{4}\\left(-\\dfrac{1}{12}\\right)^{n}$</span></span>", // 超級17，danger，白里さん寄贈，rand3=73
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation danger gaming\"><span>$a_{1}$</span> <span>$=$</span> <span>$a_{2}$</span> <span>$=$</span> <span>$a_{3}$</span> <span>$=$</span> <span>$1$</span><span>$，$</span> <span>$a_{n+3}$</span> <span>$=$</span> <span>$\\dfrac{a_{n+2}a_{n+1}+1}{a_{n}}$</span></span>", // 超級18，danger，Auさん寄贈，rand3=74
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=2，$</span><span>$a_{n+1}=a_{n}^{2}+n^{2}+n-3\\left[\\dfrac{a_{n}^{2}+n^{2}+n}{3}\\right]$</span></span>", // ガウスは問題文が違うのでここに，超級18，とますさん寄贈，rand3=75
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{0}=1，$</span><span>$a_{n+1}=a_{n}+\\left[\\sqrt{n+1}\\right]+1$ $(n\\geqq0)$</span></span>", // ガウスは問題文が違うのでここに，超級19，とますさん寄贈，rand3=76
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=b_{1}=-1，$</span><span>$a_{n+1}=2a_{n}-6b_{n}+3n，$</span><span>$b_{n+1}=a_{n}+7b_{n}+4$</span></span>", // 超級20，rand3=80
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=\\sqrt{3}+1，$</span><span>$b_{1}=\\sqrt{3}-1，$</span><span>$a_{n+1}=\\dfrac{a_{n}^{2}-b_{n}^{2}}{\\sqrt{a_{n}^{2}+b_{n}^{2}}}，$</span><span>$b_{n+1}=\\dfrac{2a_{n}b_{n}}{\\sqrt{a_{n}^{2}+b_{n}^{2}}}$</span></span>", // 超級21，白里さん寄贈，rand3=81
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+        {question: "<span class=\"animation caution gaming\"><span>$a_{1}=1，$</span><span>$a_{n}=\\dfrac{-S_{n}^{2}}{n(n+1)-S_{n}}$</span> <span>$(n\\geqq 2)$</span></span>", // 超級22，rand3=91
+        answer: "<p>超級です．是非Twitterでハッシュタグ #漸化式ガチャ または #漸化式ガチャ超級 で解いてツイートしてみてください．こちらのTwitterアカウントがいいねやリプライ，リツイートなどで反応致します．</p>",
+        weight: 1,
+        },
+    ];
+    
+    let count = 1;
+    for (let data of menu3) {
+        const prob = document.createElement("div");
+
+        prob.className = "prob";
+        prob.innerHTML = count + ". " + data.question;
+
+        document.getElementById("field").appendChild(prob);
+        count++;
+    } 
+
+
+</script>
+</body>
+</html>
