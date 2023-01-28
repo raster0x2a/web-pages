@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <div style="margin-right:auto;margin-left:auto;margin-bottom:3em;width:700px;">
+      <div align="center">
+        <h1>マインスイーパ</h1>
+        一辺のサイズ　<input type="number" id="size" value="5" style="width:40px"/><br>
+        爆弾の数　　　<input type="number" id="bomb" value="5" style="width:40px"/><br>
+        <br>
+        <input type="button" id="start" value="ゲームスタート"/><br>
+        <br>
+        <div id="board"></div>
+      </div>
+      <br>
+
+    </div>
+
+    <script>
+      $(function(){
+        var size, bomb, bombList, numList, data;
+        var board = $("#board");
+
+        $("#start").on('click', function(){
+          size = parseInt($("#size").val());
+          bomb = parseInt($("#bomb").val());
+          // 数値チェック
+          console.log(size, bomb);
+          switch(true){
+            case size*size<bomb:
+              alert("爆弾の数はマスの数より少なく指定してください");
+              retern -1;
+            case size<=0 || bomb<0:
+              alert("正しい数を指定してください");
+              return -1;
+            case size>18:
+              alert("一辺のサイズは18以下で指定してください");
+              return -1;
+          }
+          // ゲームボードを生成
+          $("#board").empty();
+          var squareSize = (size>7) ? 480/size : 40;
+          for(var i=0; i<size; i++){
+            for(var j=0; j<size; j++){
+              $('<input type="button" id="c' + i + ':' + j +
+                '" class="cell" style="width:' + squareSize +
+                'px;height:' + squareSize + 'px;font-size:13pt;margin:0;padding:0;" value=" "/> ')
+                .appendTo("#board");
+            }
+            $('<br>').appendTo("#board");
+          }
+
+          // 爆弾とその隣接するマスの座標リストを生成
+          bombList = [];
+          numList = [];
+          var directions = [[-1,0],[-1,1],[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1]];
+          for(var i=0; i<bomb; i++){
+            //爆弾の座標を乱数で生成
+            var randPlace;
+            while(true){
+              randPlace = [Math.floor(Math.random()*size), Math.floor(Math.random()*size)];
+              if(!bombList.some((x) => x[0]===randPlace[0] && x[1]===randPlace[1])){
+                bombList.push(randPlace);
+                break;
+              }
+            }
+            //爆弾のマスに隣接する8マスをリストに追加
+            console.log("r", randPlace, directions.length);
+            for(var j=0; j<directions.length; j++){
+
+              if(0<=randPlace[0]+directions[j][0] && randPlace[0]+directions[j][0]<size &&
+                 0<=randPlace[1]+directions[j][1] && randPlace[1]+directions[j][1]<size){
+                numList.push([randPlace[0]+directions[j][0], randPlace[1]+directions[j][1]]);
+                console.log(123);
+              }
+            }
+          }
+          console.log("bomb", bombList);
+
+          // マス全体のデータの二次元配列を生成
+          data = new Array(size);
+          console.log(111,data);
+          for(var i=0; i<size; i++){
+            data[i] = (new Array(size)).fill(0);
+          }
+
+          // 爆弾のマスに隣接するマスに１を加算
+          for(var i=0; i<numList.length; i++){
+            data[numList[i][0]][numList[i][1]]++;
+          }
+
+          // 爆弾のマスに爆弾をセット
+          for(var i=0; i<bomb; i++){
+            data[bombList[i][0]][bombList[i][1]] = "💣";
+          }
+          //console.log(data);
+        });
+
+        $("#board").on("click", ".cell", function(e){
+          var id = $(e.target).attr("id");
+          var y = parseInt(id.slice(1, id.indexOf(":")));
+          var x = parseInt(id.slice(id.indexOf(":")+1));
+          // HTMLに表示
+          var clearFlag = false;
+          if(data[y][x] === "💣"){
+            for(var i=0; i<bomb; i++){
+              $("#board").find(".cell").eq(bombList[i][0]*size+bombList[i][1]).val("💣");
+              //console.log($("#board").find(".cell").eq(bombList[i][0]*size+bombList[i][1]).attr("id"));
+            }
+            console.log("yx", y, x, "out");
+          }else{
+            $(e.target).val(data[y][x]);
+            console.log("yx", y, x, "safe");
+            var cnt = 0;
+            var safeFlag = true;
+            $.each($("#board").find(".cell"), function(index, value) {
+              if(value.value === ' ') cnt++;
+              if(value.value === '💣') safeFlag = false;
+            });
+            if(bomb===cnt && safeFlag){
+              console.log("game clear");
+              clearFlag = true;
+            }
+          }
+          if(clearFlag) alert("ゲームクリア");
+        });
+      });
+    </script>
+  </body>
+</html>
