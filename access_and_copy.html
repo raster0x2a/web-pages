@@ -1,0 +1,13 @@
+<script>
+ if (!navigator.clipboard) {
+  alert("Error 001: APIが対応してません");
+} else {
+  const params = new URLSearchParams(location.search);
+  const text = params.get("text") || "test";
+  navigator.clipboard.writeText(text)
+  .then(
+    ()=>{window.close()},
+    (e)=>alert(`Error 002: ${e}`)
+  );
+}
+</script>
