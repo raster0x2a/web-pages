@@ -73,9 +73,8 @@
         }
 
         #select-all {
-            /*visibility: hidden;*/
-            opacity: 0;
-            width: 10px;
+            /*opacity: 0;
+            width: 10px;*/
         }
     </style>
   </head>
@@ -188,7 +187,7 @@
 
         function gacha() {
             if (gachaPoints <= 0) {
-                displayErrorMessage("ガチャを回すためにはガチャポイントが1必要です。");
+                displayErrorMessage("ガチャを回すためにはガチャポイントが1以上必要です。");
                 return;
             }
             gachaCount++;
