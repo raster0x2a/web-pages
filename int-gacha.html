@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>整数ガチャ</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+    <style>
+        main {
+            height: 100%;
+            width: 54em;
+            text-align: center;
+            margin: 0 auto;
+            padding: 1em;
+        }
+
+        #btn-field {
+            padding: 0.5em;
+            user-select: none;
+        }
+        #btn-field > * {
+            font-size: xx-large;
+        }
+        .btn {
+            margin: 0.5em;
+        }
+
+        #hands {
+            text-align: center;
+            padding: 0.5em;
+            user-select: none;
+        }
+
+        .card {
+            width: 4em;
+            text-align: center;
+            display: inline-block;
+            margin: 3px;
+            user-select: none;
+        }
+        .card-body {
+            padding: 1em 0 1em;
+            user-select: none;
+        }
+        .card-title {
+            font-size: xx-large;
+            user-select: none;
+        }
+
+        #status-field {
+            text-align: center;
+        }
+
+        #status {
+            display: inline-block;
+            text-align: left;
+            width: 14em;
+            font-size: large;
+            border-width: 3px !important;
+            padding: 0.3em;
+        }
+
+        #message {
+            visibility: hidden;
+            margin: 0;
+        }
+
+        #rule-field {
+            text-align: left;
+            padding: 0.5em;
+            margin: 0.5em;
+            border-width: 3px !important;
+        }
+
+        #select-all {
+            /*visibility: hidden;*/
+            opacity: 0;
+            width: 10px;
+        }
+    </style>
+  </head>
+  <body>
+    <main>
+        <h1>整数ガチャ</h1>
+
+        <div id="rule-field" class="border border-primary rounded">
+            <h3>ルール</h3>
+            <ul>
+                <li>ガチャを引くと1～255の整数のカードがランダムで1つ貰えます</li>
+                <li>ガチャを1回引くとガチャポイントを1消費します</li>
+                <li>カードを選択し売却すると、各カードの素因数の数(≠種類数)分のガチャポイントを獲得できます</li>
+                <li>持っているカードの整数の総和がスコアとなります</li>
+            </ul>
+        </div>
+
+        <div id="status-field">
+            <table id="status" class="border border-secondary">
+                <tr>
+                    <td>スコア：</td>
+                    <td><span id="score">0</span></td>
+                </tr>
+                <tr>
+                    <td>ガチャを回した回数：</td>
+                    <td><span id="gacha-count">0</span></td>
+                </tr>
+                <tr>
+                    <td>ガチャポイント：</td>
+                    <td><span id="gacha-point">1</span></td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="btn-field">
+            <button id="gacha" type="button" class="btn btn-primary btn-lg">ガチャ！</button>
+            <button id="sell" type="button" class="btn btn-secondary btn-lg">売却</button>
+            <button id="select-all" type="button" class="btn btn-secondary btn-lg">全選択</button>
+        </div>
+
+        <div id="message" class="alert alert-danger" role="alert">
+            &nbsp;
+        </div>
+        
+        <div id="hands">
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+    <script>
+        const selectedColor = "#aaa";
+        let score = 0;
+        let gachaCount = 0;
+        let gachaPoints = 1;
+        //let cardList = [];
+
+        function random255() {
+            return Math.floor(Math.random() * (255 + 1)) + 1;
+        }
+
+        function updateStatus() {
+            const scoreElm = document.getElementById("score");
+            scoreElm.innerText = score;
+            const gachaCountElm = document.getElementById("gacha-count");
+            gachaCountElm.innerText = gachaCount;
+            const gachaPointsElm = document.getElementById("gacha-point");
+            gachaPointsElm.innerText = gachaPoints;
+
+            const messageArea = document.getElementById("message");
+            messageArea.style.visibility = "hidden";
+        }
+
+        function addCard(num) {
+            const hands = document.getElementById("hands");
+            const newCard = document.createElement("span");
+            newCard.className = "card";
+            newCard.innerHTML = `<div class="card-body"><h5 class="card-title">${num}</h5></div>`;
+            newCard.addEventListener("click", cardSelect);
+
+            //cardList.push(num);
+            hands.appendChild(newCard);
+        }
+
+        function factorise(num) {
+            if (num === 1) {
+                return [];
+            }
+            
+            let factor = [];
+            while (num != 1) {
+                for (let i = 2; i <= num; i++) {
+                    if (num % i === 0) {
+                        factor.push(i);
+                        num = num / i;
+                        break;
+                    }
+                }
+            }
+
+            return factor;
+        }
+
+        function displayErrorMessage(messageText) {
+            const messageArea = document.getElementById("message");
+            messageArea.innerText = messageText;
+            messageArea.style.visibility = "visible";
+        }
+
+        function gacha() {
+            if (gachaPoints <= 0) {
+                displayErrorMessage("ガチャを回すためにはガチャポイントが1必要です。");
+                return;
+            }
+            gachaCount++;
+            gachaPoints--;
+            const num = random255();
+            addCard(num);
+            score += num;
+            updateStatus();
+        }
+        const gachaBtn = document.getElementById("gacha");
+        gachaBtn.addEventListener("click", gacha);
+
+        function getSelectedCard() {
+            let selectedCards = [];
+            const cardTiles = document.getElementsByClassName("card");
+            for (let i = 0; i < cardTiles.length; i++) {
+                if (cardTiles[i].value === "selected") {
+                    selectedCards.push(cardTiles[i]);
+                }
+            }
+            return selectedCards
+        }
+        function sell() {
+            const selectedCards = getSelectedCard();
+            let pointsEarned = 0;
+            let sumCardNum = 0;
+            for (let i = 0; i < selectedCards.length; i++) {
+                const card = selectedCards[i];
+                const num = Number(card.textContent);
+                sumCardNum += num;
+                let factorNum = factorise(num).length;
+                pointsEarned += factorNum;
+                card.remove();
+            }
+
+            gachaPoints += pointsEarned;
+            score -= sumCardNum;
+            updateStatus();
+        }
+        const sellBtn = document.getElementById("sell");
+        sellBtn.addEventListener("click", sell);
+
+        function cardSelect(event) {
+            const target = event.currentTarget;
+            const isSelected = target.value === "selected";
+            if (!isSelected) {
+                target.style.backgroundColor = selectedColor;
+                target.value = "selected";
+            } else {
+                target.style.backgroundColor = "#fff";
+                target.value = "";
+            }
+            
+        }
+        const cardTiles = document.getElementsByClassName("card");
+        for (let i = 0; i < cardTiles.length; i++) {
+            cardTiles[i].addEventListener("click", cardSelect);
+        }
+
+        function selectAll() {
+            console.log(234);
+            const cardTiles = document.getElementsByClassName("card");
+            for (let i = 0; i < cardTiles.length; i++) {
+                cardTiles[i].value = "selected";
+                cardTiles[i].style.backgroundColor = selectedColor;
+            }
+        }
+        const selectAllBtn = document.getElementById("select-all");
+        selectAllBtn.addEventListener("click", selectAll);
+    </script>
+  </body>
+</html>
