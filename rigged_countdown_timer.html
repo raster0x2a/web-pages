@@ -5,11 +5,11 @@
         <title>不正カウントダウンタイマー</title>
     </head>
     <body>
-        <h1>不正カウントダウンタイマー</h1>
+        <h1>不正カウントダウンタイマ</h1>
         <div>
-            <input type="text" id="min" value="1">分
+            時間：<input type="text" id="min" value="1">分
             <input type="text" id="sec" value="0">秒<br>
-            <input type="text" id="magnification" value="1.1">倍率<br>
+            倍率：<input type="text" id="magnification" value="1.1">倍<br>
             <input type="button" id="start" value="スタート">
             <input type="button" id="stop" value="ストップ">
         </div>
@@ -24,6 +24,11 @@
             stopButton.addEventListener("click", countStop);
 
             function countStart() {
+                if (isCounting) {
+                    alert("既に開始しています");
+                    return;
+                }
+                isCounting = true;
                 const magnification = Number(document.getElementById("magnification").value);
                 const interval = 1000 * magnification;
                 timer = setInterval(countDown, interval);
@@ -49,6 +54,8 @@
             }
 
             function countStop() {
+                if (!isCounting) return;
+                isCounting = false;
                 clearInterval(timer);
             }
 
