@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>不正カウントダウンタイマー</title>
+    </head>
+    <body>
+        <h1>不正カウントダウンタイマー</h1>
+        <div>
+            <input type="text" id="min" value="1">分
+            <input type="text" id="sec" value="0">秒<br>
+            <input type="text" id="magnification" value="1.1">倍率<br>
+            <input type="button" id="start" value="スタート">
+            <input type="button" id="stop" value="ストップ">
+        </div>
+
+        <script>
+            let timer;
+            let isCounting = false;
+            const startButton = document.getElementById("start");
+            const stopButton = document.getElementById("stop");
+            
+            startButton.addEventListener("click", countStart);
+            stopButton.addEventListener("click", countStop);
+
+            function countStart() {
+                const magnification = Number(document.getElementById("magnification").value);
+                const interval = 1000 * magnification;
+                timer = setInterval(countDown, interval);
+            }
+            
+            function countDown() {
+                const minTextbox = document.getElementById("min");
+                const secTextbox = document.getElementById("sec");
+                const min = Number(minTextbox.value);
+                const sec = Number(secTextbox.value);
+                console.log(min, sec);
+
+                if (sec === 0) {
+                    if (min === 0) {
+                        countEnd();
+                    } else {
+                        minTextbox.value = String(min - 1);
+                        secTextbox.value = "59";
+                    }
+                } else {
+                    secTextbox.value = String(sec - 1);
+                }
+            }
+
+            function countStop() {
+                clearInterval(timer);
+            }
+
+            function countEnd() {
+                countStop()
+                alert("終了！");
+            }
+        </script>
+    </body>
+</html>
+
