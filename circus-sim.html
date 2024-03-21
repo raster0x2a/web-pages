@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            #canvas {
+                border: thick solid #32a1ce;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas" height="1200" width="1800"></canvas>
+        <script>
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d");
+
+            const HEIGHT = canvas.height;
+            const WIDTH = canvas.width;
+
+            const lerp = (x, y, a) => x * (1 - a) + y * a;
+            const clamp = (a, min = 0, max = 1) => Math.min(max, Math.max(min, a));
+            const invlerp = (x, y, a) => clamp((a - x) / (y - x));
+            const range = (x1, y1, x2, y2, a) => lerp(x2, y2, invlerp(x1, y1, a));
+            
+            const generateAircraft = (number) => {
+                return {
+                    x: 50,
+                    //y: HEIGHT / 2 + Math.random() * 200 - 50,
+                    y: 50 * number + HEIGHT / 2,
+                    angle: Math.random() / 2 + 0.75,
+                    //angle: 0.25,
+                    color: `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`
+                }
+            }
+
+            const drawTriangle = (x, y, angle, color) => {
+                const aircraftLength = 30;
+                const aircraftSharpness = 0.2;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                //ctx.lineTo(x + aircraftLength * Math.cos(angle * Math.PI), y + aircraftLength * Math.sin(angle * Math.PI));
+                ctx.lineTo(x + aircraftLength * Math.cos((angle  - aircraftSharpness / 2) * Math.PI), y + aircraftLength * Math.sin((angle  - aircraftSharpness / 2) * Math.PI));
+                ctx.lineTo(x + aircraftLength * Math.cos((angle  + aircraftSharpness / 2) * Math.PI), y + aircraftLength * Math.sin((angle  + aircraftSharpness / 2) * Math.PI));
+                ctx.closePath();
+
+                ctx.strokeStyle = color;
+                ctx.stroke();
+
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+
+            const getCenterOfGravity = (aircrafts) => {
+                let xSum = 0;
+                let ySum = 0;
+                aircrafts.map((aircraft) => {
+                    xSum += aircraft.x;
+                    ySum += aircraft.y;
+                });
+
+                return {
+                    x: xSum / aircrafts.length,
+                    y: ySum / aircrafts.length
+                }
+
+            }
+
+            const n = 5;
+            const aircrafts = [...Array(n).keys()].map((n) => generateAircraft(n));
+            console.log(aircrafts);
+            const speed = 10;
+
+            setInterval(
+                () => {
+                    
+                    aircrafts.map((aircraft) => {
+                        //aircraft.x -= speed * Math.cos(aircraft.angle * Math.PI);
+                        //aircraft.y -= speed * Math.sin(aircraft.angle * Math.PI);
+                        
+                        const center = getCenterOfGravity(aircrafts);
+                        const angleToCenter = Math.atan2(center.y - aircraft.y, center.x - aircraft.x);
+                        const a = 0.008;
+                        aircraft.angle = lerp(aircraft.angle, angleToCenter, a);
+
+                        const newX = aircraft.x - speed * Math.cos(aircraft.angle * Math.PI);
+                        const newY = aircraft.y - speed * Math.sin(aircraft.angle * Math.PI);
+                        
+                        aircraft.x = newX;
+                        aircraft.y = newY;
+                        
+                        ctx.fillStyle = "rgb(255, 0, 0)";
+                        ctx.fillRect(center.x, center.y, 5, 5);
+                        //console.log(Math.cos(aircraft.angle * Math.PI), Math.sin(aircraft.angle * Math.PI));
+                    });
+
+                    aircrafts.map((aircraft) => {
+                        drawTriangle(aircraft.x, aircraft.y, aircraft.angle, aircraft.color);
+                    });
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                },
+                100
+            );
+        </script>
+    </body>
+</html>
