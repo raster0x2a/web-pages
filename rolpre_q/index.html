@@ -3,8 +3,25 @@
   <head>
     <meta charset="utf-8" />
     <title>ロルプレクエスト 非公式蘇生版</title>
+    <style>
+      .container {
+        font-family: arial;
+        font-size: 24px;
+        margin: 25px;
+        width: 350px;
+        height: 200px;
+        outline: dashed 1px black;
+      }
+      
+      #flashContent {
+        text-align: center;
+      }
+    </style>
   </head>
   <body>
+    <div class="container">
+      <div id="flashContent"></div>
+    </div>
     <div id="flashContent"></div>
     <script>
       window.RufflePlayer = window.RufflePlayer || {};
@@ -20,6 +37,6 @@
       player.style.width = "600px";
       player.style.height = "400px";
     </script>
-    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+    <script src="ruffle.js"></script>
   </body>
 </html>
