@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>ロルプレクエスト 非公式蘇生版</title>
+  </head>
+  <body>
+    <div id="flashContent"></div>
+    <script>
+      window.RufflePlayer = window.RufflePlayer || {};
+      window.addEventListener("load", (event) => {
+        const ruffle = window.RufflePlayer.newest();
+        const player = ruffle.createPlayer();
+        const container = document.getElementById("flashContent");
+        container.appendChild(player);
+        const swfUrl = "https://web.archive.org/web/20140911163930/http://kids.nifty.com/game/adventure/rolple_q/images/game.swf";
+        player.load(swfUrl);
+      });
+      player.style.width = "600px";
+      player.style.height = "400px";
+    </script>
+    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+  </body>
+</html>
