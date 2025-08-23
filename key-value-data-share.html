@@ -348,7 +348,7 @@
 
         function compressData(data) {
             let resultData = [];
-            for (let item in data) {
+            data.forEach((item) => {
                 resultData.push(item.key + ':' + item.value);
             }
             return btoa(resultData.join(';'));
