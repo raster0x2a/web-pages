@@ -358,7 +358,7 @@
             const decoded = atob(compressd);
             let data = {};
             for (let item in decoded.split(';')) {
-                const key, value = item.split(':');
+                const { key, value } = item.split(':');
                 data[key] = value;
             }
             return data;
