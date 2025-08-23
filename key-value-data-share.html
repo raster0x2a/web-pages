@@ -355,7 +355,7 @@
         }
 
         function decompressData(compressed) {
-            const decoded = atob(compressd);
+            const decoded = atob(compressed);
             let data = {};
             for (let item in decoded.split(';')) {
                 const { key, value } = item.split(':');
