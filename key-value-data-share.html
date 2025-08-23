@@ -255,7 +255,8 @@
 <body>
     <div class="container">
         <h1>Key-Value Data Share</h1>
-        <div id="generate-section">
+        <a href="/web-pages/key-value-data-share.html" id="goToTop" style="display: none;">
+        <div id="generateSection">
             <div class="input-section">
                 <div class="section-title">データ入力</div>
                 <div class="example">
@@ -309,7 +310,8 @@
             console.log(encodedData);
             if (encodedData) {
                 try {
-                    document.getElementById('generate-section').style.display = 'none';
+                    document.getElementById('generateSection').style.display = 'none';
+                    document.getElementById('goToTop').style.display = 'none';
                     const decodedData = decompressData(encodedData);
                     console.log(decodedData);
                     displayData(decodedData);
