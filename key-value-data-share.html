@@ -361,7 +361,7 @@
             console.log('decoded', decoded);
             let data = [];
             for (let item in decoded.split(';')) {
-                const { key, value } = item.split(':');
+                const [key, value] = item.split(':');
                 data.push({key, value});
             }
             return data;
