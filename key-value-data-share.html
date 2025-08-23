@@ -362,6 +362,7 @@
             let data = [];
             for (let item in decoded.split(';')) {
                 const [key, value] = item.split(':');
+                console.log([key, value]);
                 data.push({key, value});
             }
             return data;
