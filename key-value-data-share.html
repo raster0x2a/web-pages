@@ -353,11 +353,11 @@
             data.forEach(item => {
                 resultData.push(item.key + ':' + item.value);
             });
-            return btoa(resultData.join(';'));
+            return btoa(encodeURIComponent(resultData.join(';')));
         }
 
         function decompressData(compressed) {
-            const decoded = atob(compressed);
+            const decoded = decodeURIComponent(atob(compressed));
             let data = [];
             for (let item in decoded.split(';')) {
                 const { key, value } = item.split(':');
