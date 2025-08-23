@@ -408,7 +408,7 @@
                 dataItem.className = 'data-item';
                 dataItem.innerHTML = `
                     <div class="data-key">${escapeHtml(item.key)}</div>
-                    <div class="data-value">${item.value.toLocaleString()}</div>
+                    <div class="data-value">${escapeHtml(item.value)}</div>
                 `;
                 dataList.appendChild(dataItem);
             });
