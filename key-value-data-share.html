@@ -356,10 +356,10 @@
 
         function decompressData(compressed) {
             const decoded = atob(compressed);
-            let data = {};
+            let data = [];
             for (let item in decoded.split(';')) {
                 const { key, value } = item.split(':');
-                data[key] = value;
+                data.push({key, value});
             }
             return data;
         }
