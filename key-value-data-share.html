@@ -308,6 +308,7 @@
             if (encodedData) {
                 //try {
                     const decodedData = decompressData(encodedData);
+                    console.log(decodedData);
                     displayData(decodedData);
                     document.getElementById('inputData').value = decodedData.map(item => `${item.key}: ${item.value}`).join('\n');
                 //} catch (error) {
