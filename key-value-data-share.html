@@ -255,32 +255,33 @@
 <body>
     <div class="container">
         <h1>Key-Value Data Share</h1>
-        
-        <div class="input-section">
-            <div class="section-title">データ入力</div>
-            <div class="example">
-                <div class="example-title">入力形式の例:</div>
-                <div class="example-code">りんご: 150
-バナナ: 120
-オレンジ: 180
-ぶどう: 200</div>
+        <div id="generate-section">
+            <div class="input-section">
+                <div class="section-title">データ入力</div>
+                <div class="example">
+                    <div class="example-title">入力形式の例:</div>
+                    <div class="example-code">りんご: 150
+    バナナ: 120
+    オレンジ: 180
+    ぶどう: 200</div>
+                </div>
+                <textarea id="inputData" placeholder="「文字列: 整数値」の形式で入力してください（1行に1つずつ）"></textarea>
             </div>
-            <textarea id="inputData" placeholder="「文字列: 整数値」の形式で入力してください（1行に1つずつ）"></textarea>
-        </div>
-        
-        <div class="buttons">
-            <button class="primary-btn" onclick="convertToURL()">🔗 URLに変換</button>
-            <button class="secondary-btn" onclick="clearAll()">🗑️ クリア</button>
-            <button class="secondary-btn" onclick="loadSampleData()">📋 サンプルデータ</button>
-        </div>
-        
-        <div id="errorMessage"></div>
-        <div id="successMessage"></div>
-        
-        <div class="url-section" id="urlSection" style="display: none;">
-            <div class="section-title">生成されたURL</div>
-            <div class="url-display" id="urlDisplay"></div>
-            <button class="copy-btn" onclick="copyURL()">📋 URLをコピー</button>
+            
+            <div class="buttons">
+                <button class="primary-btn" onclick="convertToURL()">🔗 URLに変換</button>
+                <button class="secondary-btn" onclick="clearAll()">🗑️ クリア</button>
+                <button class="secondary-btn" onclick="loadSampleData()">📋 サンプルデータ</button>
+            </div>
+            
+            <div id="errorMessage"></div>
+            <div id="successMessage"></div>
+            
+            <div class="url-section" id="urlSection" style="display: none;">
+                <div class="section-title">生成されたURL</div>
+                <div class="url-display" id="urlDisplay"></div>
+                <button class="copy-btn" onclick="copyURL()">📋 URLをコピー</button>
+            </div>
         </div>
         
         <div class="data-section" id="dataSection" style="display: none;">
@@ -307,14 +308,15 @@
             
             console.log(encodedData);
             if (encodedData) {
-                //try {
+                try {
+                    document.getElementById('generate-section').style.display = 'none';
                     const decodedData = decompressData(encodedData);
                     console.log(decodedData);
                     displayData(decodedData);
                     document.getElementById('inputData').value = decodedData.map(item => `${item.key}: ${item.value}`).join('\n');
-                //} catch (error) {
-                //    showError('URLからのデータ復元に失敗しました: ' + error.message);
-                //}
+                } catch (error) {
+                    showError('URLからのデータ復元に失敗しました: ' + error.message);
+                }
             }
         });
 
