@@ -311,7 +311,7 @@
             if (encodedData) {
                 try {
                     document.getElementById('generateSection').style.display = 'none';
-                    document.getElementById('goToTop').style.display = 'none';
+                    document.getElementById('goToTop').style.display = 'block';
                     const decodedData = decompressData(encodedData);
                     console.log(decodedData);
                     displayData(decodedData);
