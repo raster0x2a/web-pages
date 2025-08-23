@@ -306,13 +306,13 @@
             const encodedData = urlParams.get('data');
             
             if (encodedData) {
-                try {
+                //try {
                     const decodedData = decompressData(encodedData);
                     displayData(decodedData);
                     document.getElementById('inputData').value = decodedData.map(item => `${item.key}: ${item.value}`).join('\n');
-                } catch (error) {
-                    showError('URLからのデータ復元に失敗しました: ' + error.message);
-                }
+                //} catch (error) {
+                //    showError('URLからのデータ復元に失敗しました: ' + error.message);
+                //}
             }
         });
 
@@ -365,7 +365,7 @@
         }
 
         function convertToURL() {
-            try {
+            //try {
                 const inputText = document.getElementById('inputData').value;
                 if (!inputText.trim()) {
                     showError('データを入力してください');
@@ -386,9 +386,9 @@
                 // URLを更新（ページをリロードしない）
                 history.pushState(null, '', `?data=${encoded}`);
                 
-            } catch (error) {
-                showError(error.message);
-            }
+            //} catch (error) {
+            //    showError(error.message);
+            //}
         }
 
         function displayData(data) {
