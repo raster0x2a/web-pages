@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Key-Value Data Share</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.3em;
+            color: #444;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .primary-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .secondary-btn {
+            background: #f8f9fa;
+            color: #495057;
+            border: 2px solid #e9ecef;
+        }
+        
+        .secondary-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+        
+        .url-section {
+            margin: 20px 0;
+        }
+        
+        .url-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .copy-btn {
+            margin-top: 10px;
+            background: #28a745;
+            color: white;
+        }
+        
+        .copy-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .data-section {
+            margin-top: 30px;
+        }
+        
+        .sort-controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .sort-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .sort-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .data-list {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        
+        .data-item:last-child {
+            border-bottom: none;
+        }
+        
+        .data-item:hover {
+            background-color: #f8f9ff;
+        }
+        
+        .data-key {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+        
+        .data-value {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .example {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .example-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .example-code {
+            font-family: 'Courier New', monospace;
+            color: #666;
+            white-space: pre-line;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Key-Value Data Share</h1>
+        
+        <div class="input-section">
+            <div class="section-title">データ入力</div>
+            <div class="example">
+                <div class="example-title">入力形式の例:</div>
+                <div class="example-code">りんご: 150
+バナナ: 120
+オレンジ: 180
+ぶどう: 200</div>
+            </div>
+            <textarea id="inputData" placeholder="「文字列: 整数値」の形式で入力してください（1行に1つずつ）"></textarea>
+        </div>
+        
+        <div class="buttons">
+            <button class="primary-btn" onclick="convertToURL()">🔗 URLに変換</button>
+            <button class="secondary-btn" onclick="clearAll()">🗑️ クリア</button>
+            <button class="secondary-btn" onclick="loadSampleData()">📋 サンプルデータ</button>
+        </div>
+        
+        <div id="errorMessage"></div>
+        <div id="successMessage"></div>
+        
+        <div class="url-section" id="urlSection" style="display: none;">
+            <div class="section-title">生成されたURL</div>
+            <div class="url-display" id="urlDisplay"></div>
+            <button class="copy-btn" onclick="copyURL()">📋 URLをコピー</button>
+        </div>
+        
+        <div class="data-section" id="dataSection" style="display: none;">
+            <div class="section-title">データ一覧</div>
+            <div class="sort-controls">
+                <span>ソート:</span>
+                <button class="sort-btn active" id="ascBtn" onclick="sortData('asc')">🔼 昇順</button>
+                <button class="sort-btn" id="descBtn" onclick="sortData('desc')">🔽 降順</button>
+                <button class="sort-btn" id="originalBtn" onclick="sortData('original')">📄 元の順序</button>
+            </div>
+            <div class="data-list" id="dataList"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = [];
+        let originalData = [];
+        let currentSort = 'asc';
+
+        // ページ読み込み時にURLパラメータをチェック
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedData = urlParams.get('data');
+            
+            if (encodedData) {
+                try {
+                    const decodedData = decodeDataFromURL(encodedData);
+                    displayData(decodedData);
+                    document.getElementById('inputData').value = decodedData.map(item => `${item.key}: ${item.value}`).join('\n');
+                } catch (error) {
+                    showError('URLからのデータ復元に失敗しました: ' + error.message);
+                }
+            }
+        });
+
+        function parseInputData(text) {
+            const lines = text.trim().split('\n');
+            const data = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const match = line.match(/^(.+?):\s*(-?\d+)$/);
+                if (!match) {
+                    throw new Error(`行 ${i + 1}: 無効な形式です - "${line}"`);
+                }
+                
+                const key = match[1].trim();
+                const value = parseInt(match[2]);
+                
+                if (key === '') {
+                    throw new Error(`行 ${i + 1}: キーが空です`);
+                }
+                
+                data.push({ key, value });
+            }
+            
+            if (data.length === 0) {
+                throw new Error('有効なデータが見つかりません');
+            }
+            
+            return data;
+        }
+
+        function compressData(data) {
+            // JSONを文字列化
+            const jsonString = JSON.stringify(data.map(item => [item.key, item.value]));
+            
+            // 簡単な圧縮（頻出文字の置換）
+            let compressed = jsonString
+                .replace(/\],\[/g, '|')
+                .replace(/^\[\[/, '')
+                .replace(/\]\]$/, '')
+                .replace(/",/g, '~')
+                .replace(/"/g, '');
+            
+            return compressed;
+        }
+
+        function decompressData(compressed) {
+            // 圧縮を展開
+            let expanded = compressed
+                .replace(/~/g, '",')
+                .replace(/\|/g, '],["')
+                .replace(/^/, '[["')
+                .replace(/$/, '"]]');
+            
+            // JSONとしてパース
+            const parsed = JSON.parse(expanded);
+            return parsed.map(([key, value]) => ({ key, value: parseInt(value) }));
+        }
+
+        function encodeToBase64(data) {
+            const compressed = compressData(data);
+            return btoa(encodeURIComponent(compressed));
+        }
+
+        function decodeFromBase64(encoded) {
+            const compressed = decodeURIComponent(atob(encoded));
+            return decompressData(compressed);
+        }
+
+        function convertToURL() {
+            try {
+                const inputText = document.getElementById('inputData').value;
+                if (!inputText.trim()) {
+                    showError('データを入力してください');
+                    return;
+                }
+
+                const data = parseInputData(inputText);
+                const encoded = encodeToBase64(data);
+                const currentURL = window.location.origin + window.location.pathname;
+                const fullURL = `${currentURL}?data=${encoded}`;
+                
+                document.getElementById('urlDisplay').textContent = fullURL;
+                document.getElementById('urlSection').style.display = 'block';
+                
+                displayData(data);
+                showSuccess(`データを変換しました（${data.length}件）`);
+                
+                // URLを更新（ページをリロードしない）
+                history.pushState(null, '', `?data=${encoded}`);
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function decodeDataFromURL(encoded) {
+            return decodeFromBase64(encoded);
+        }
+
+        function displayData(data) {
+            currentData = [...data];
+            originalData = [...data];
+            
+            document.getElementById('dataSection').style.display = 'block';
+            updateDataList();
+        }
+
+        function updateDataList() {
+            const dataList = document.getElementById('dataList');
+            dataList.innerHTML = '';
+            
+            currentData.forEach(item => {
+                const dataItem = document.createElement('div');
+                dataItem.className = 'data-item';
+                dataItem.innerHTML = `
+                    <div class="data-key">${escapeHtml(item.key)}</div>
+                    <div class="data-value">${item.value.toLocaleString()}</div>
+                `;
+                dataList.appendChild(dataItem);
+            });
+        }
+
+        function sortData(type) {
+            // ボタンの状態を更新
+            document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(type + 'Btn').classList.add('active');
+            
+            currentSort = type;
+            
+            switch (type) {
+                case 'asc':
+                    currentData.sort((a, b) => a.value - b.value);
+                    break;
+                case 'desc':
+                    currentData.sort((a, b) => b.value - a.value);
+                    break;
+                case 'original':
+                    currentData = [...originalData];
+                    break;
+            }
+            
+            updateDataList();
+        }
+
+        function copyURL() {
+            const urlText = document.getElementById('urlDisplay').textContent;
+            navigator.clipboard.writeText(urlText).then(() => {
+                showSuccess('URLをクリップボードにコピーしました');
+            }).catch(() => {
+                // フォールバック
+                const textArea = document.createElement('textarea');
+                textArea.value = urlText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showSuccess('URLをクリップボードにコピーしました');
+            });
+        }
+
+        function clearAll() {
+            document.getElementById('inputData').value = '';
+            document.getElementById('urlSection').style.display = 'none';
+            document.getElementById('dataSection').style.display = 'none';
+            document.getElementById('errorMessage').innerHTML = '';
+            document.getElementById('successMessage').innerHTML = '';
+            
+            // URLからパラメータを削除
+            history.pushState(null, '', window.location.pathname);
+        }
+
+        function loadSampleData() {
+            const sampleData = `りんご: 150
+バナナ: 120
+オレンジ: 180
+ぶどう: 200
+いちご: 300
+キウイ: 80
+パイナップル: 250
+マンゴー: 180`;
+            document.getElementById('inputData').value = sampleData;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.innerHTML = `<div class="error">❌ ${escapeHtml(message)}</div>`;
+            document.getElementById('successMessage').innerHTML = '';
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.innerHTML = `<div class="success">✅ ${escapeHtml(message)}</div>`;
+            document.getElementById('errorMessage').innerHTML = '';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
