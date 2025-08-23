@@ -324,13 +324,13 @@
                 const line = lines[i].trim();
                 if (!line) continue;
                 
-                const match = line.match(/^(.+?):\s*(-?\d+)$/);
+                const match = line.match(/^(.+?):\s*(-?[0-9]+)$/);
                 if (!match) {
                     throw new Error(`行 ${i + 1}: 無効な形式です - "${line}"`);
                 }
                 
                 const key = match[1].trim();
-                const value = parseInt(match[2]);
+                const value = Number(match[2]);
                 
                 if (key === '') {
                     throw new Error(`行 ${i + 1}: キーが空です`);
@@ -347,41 +347,21 @@
         }
 
         function compressData(data) {
-            // JSONを文字列化
-            const jsonString = JSON.stringify(data.map(item => [item.key, item.value]));
-            
-            // 簡単な圧縮（頻出文字の置換）
-            let compressed = jsonString
-                .replace(/\],\[/g, '|')
-                .replace(/^\[\[/, '')
-                .replace(/\]\]$/, '')
-                .replace(/",/g, '~')
-                .replace(/"/g, '');
-            
-            return compressed;
+            let resultData = [];
+            for (let item in data) {
+                resultData.add(item.key + ':' item.value);
+            }
+            return btoa(resultData.join(';'));
         }
 
         function decompressData(compressed) {
-            // 圧縮を展開
-            let expanded = compressed
-                .replace(/~/g, '",')
-                .replace(/\|/g, '],["')
-                .replace(/^/, '[["')
-                .replace(/$/, '"]]');
-            
-            // JSONとしてパース
-            const parsed = JSON.parse(expanded);
-            return parsed.map(([key, value]) => ({ key, value: parseInt(value) }));
-        }
-
-        function encodeToBase64(data) {
-            const compressed = compressData(data);
-            return btoa(encodeURIComponent(compressed));
-        }
-
-        function decodeFromBase64(encoded) {
-            const compressed = decodeURIComponent(atob(encoded));
-            return decompressData(compressed);
+            const decoded = atob(compressd);
+            let data = {};
+            for (let item in decoded.split(';')) {
+                const key, value = item.split(':');
+                data[key] = value;
+            }
+            return data;
         }
 
         function convertToURL() {
@@ -393,7 +373,7 @@
                 }
 
                 const data = parseInputData(inputText);
-                const encoded = encodeToBase64(data);
+                const encoded = compressData(data);
                 const currentURL = window.location.origin + window.location.pathname;
                 const fullURL = `${currentURL}?data=${encoded}`;
                 
@@ -409,10 +389,6 @@
             } catch (error) {
                 showError(error.message);
             }
-        }
-
-        function decodeDataFromURL(encoded) {
-            return decodeFromBase64(encoded);
         }
 
         function displayData(data) {
