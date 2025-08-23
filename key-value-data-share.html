@@ -305,6 +305,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const encodedData = urlParams.get('data');
             
+            console.log(encodedData);
             if (encodedData) {
                 //try {
                     const decodedData = decompressData(encodedData);
