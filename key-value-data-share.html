@@ -307,7 +307,7 @@
             
             if (encodedData) {
                 try {
-                    const decodedData = decodeDataFromURL(encodedData);
+                    const decodedData = compressData(encodedData);
                     displayData(decodedData);
                     document.getElementById('inputData').value = decodedData.map(item => `${item.key}: ${item.value}`).join('\n');
                 } catch (error) {
