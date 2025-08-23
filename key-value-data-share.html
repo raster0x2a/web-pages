@@ -318,7 +318,7 @@
 
         function parseInputData(text) {
             const lines = text.trim().split('\n');
-            const data = [];
+            const data = {};
             
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
@@ -336,7 +336,7 @@
                     throw new Error(`行 ${i + 1}: キーが空です`);
                 }
                 
-                data.push({ key, value });
+                data[key] = value;
             }
             
             if (data.length === 0) {
