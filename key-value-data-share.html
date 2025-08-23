@@ -358,6 +358,7 @@
 
         function decompressData(compressed) {
             const decoded = decodeURIComponent(atob(compressed));
+            console.log('decoded', decoded);
             let data = [];
             for (let item in decoded.split(';')) {
                 const { key, value } = item.split(':');
