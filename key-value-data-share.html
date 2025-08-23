@@ -360,7 +360,7 @@
             const decoded = decodeURIComponent(atob(compressed));
             console.log('decoded', decoded);
             let data = [];
-            for (let item in decoded.split(';')) {
+            for (let item of decoded.split(';')) {
                 const [key, value] = item.split(':');
                 console.log([key, value]);
                 data.push({key, value});
