@@ -349,7 +349,7 @@
         function compressData(data) {
             let resultData = [];
             for (let item in data) {
-                resultData.add(item.key + ':' + item.value);
+                resultData.push(item.key + ':' + item.value);
             }
             return btoa(resultData.join(';'));
         }
