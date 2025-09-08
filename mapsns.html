@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マップ投稿SNS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        /* Leafletのコンテナの高さを確保 */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* スクロールバーを非表示 */
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        /* Leafletポップアップの角を丸くする */
+        .leaflet-popup-content-wrapper {
+            border-radius: 0.5rem;
+        }
+
+        /* カスタム吹き出し（ツールチップ）のスタイル */
+        .custom-tooltip {
+            background-color: white;
+            border: 2px solid #3b82f6; /* マーカーの色と合わせる */
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            font-weight: 500;
+            color: #1f2937;
+            padding: 8px 12px;
+            white-space: pre-wrap; /* テキストの改行を許可 */
+            word-wrap: break-word; /* 長い単語を折り返す */
+            min-width: 150px; /* 最小幅を設定 */
+            max-width: 300px; /* 最大幅を調整 */
+        }
+        /* 吹き出しのしっぽの色を枠線の色と合わせる */
+        .leaflet-tooltip-top.custom-tooltip::before {
+            border-top-color: #3b82f6;
+        }
+        .leaflet-tooltip-bottom.custom-tooltip::before {
+            border-bottom-color: #3b82f6;
+        }
+        .leaflet-tooltip-right.custom-tooltip::before {
+            border-right-color: #3b82f6;
+        }
+        .leaflet-tooltip-left.custom-tooltip::before {
+            border-left-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="font-sans">
+
+    <!-- 地図を表示するコンテナ -->
+    <div id="map" class="z-0"></div>
+
+    <!-- 投稿用モーダル (初期状態では非表示) -->
+    <div id="postModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-[1000] p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="modal-content">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">メッセージを投稿</h2>
+            <textarea id="postText" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="4" placeholder="ここにメッセージを入力..."></textarea>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="cancelPost" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">キャンセル</button>
+                <button id="submitPost" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow">投稿</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ヘルプメッセージ -->
+    <div class="fixed top-4 left-1/2 -translate-x-1/2 bg-white bg-opacity-90 p-3 rounded-full shadow-lg z-[500] pointer-events-none w-11/12 max-w-md">
+        <p class="text-gray-800 text-center text-sm md:text-base font-medium">📍 マップをクリックして投稿。マーカーをクリックで削除できます</p>
+    </div>
+
+
+    <script>
+        // --- DOM要素の取得 ---
+        const mapElement = document.getElementById('map');
+        const postModal = document.getElementById('postModal');
+        const modalContent = document.getElementById('modal-content');
+        const postText = document.getElementById('postText');
+        const cancelPostBtn = document.getElementById('cancelPost');
+        const submitPostBtn = document.getElementById('submitPost');
+
+        // --- グローバル変数 ---
+        let tempLatLng = null; // 一時的にクリック位置を保持
+        let posts = []; // 投稿を管理する配列
+        const markers = {}; // マーカーをIDで管理するオブジェクト
+
+        // --- 地図の初期化 ---
+        const map = L.map(mapElement, {
+            zoomControl: false // デフォルトのズームコントロールを非表示
+        }).setView([35.6895, 139.6917], 13); // 初期位置を東京に設定
+        L.control.zoom({ position: 'topright' }).addTo(map); // ズームコントロールを右上に配置
+
+        // OpenStreetMapのタイルレイヤーを追加
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // --- 関数定義 ---
+
+        /**
+         * モーダルを開く関数
+         */
+        const openModal = (latlng) => {
+            tempLatLng = latlng;
+            postText.value = '';
+            postModal.classList.remove('hidden');
+            // アニメーションのための遅延実行
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+            postText.focus();
+        };
+
+        /**
+         * モーダルを閉じる関数
+         */
+        const closeModal = () => {
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                postModal.classList.add('hidden');
+                tempLatLng = null;
+            }, 300); // アニメーション時間と合わせる
+        };
+
+        /**
+         * HTML文字列をエスケープする関数 (XSS対策)
+         * @param {string} str - エスケープする文字列
+         * @returns {string} - エスケープされた安全なHTML文字列
+         */
+        const escapeHTML = (str) => {
+            const p = document.createElement('p');
+            p.textContent = str;
+            return p.innerHTML.replace(/\n/g, '<br>');
+        };
+
+        /**
+         * 投稿をLocalStorageに保存する
+         */
+        const savePosts = () => {
+            localStorage.setItem('map-sns-posts', JSON.stringify(posts));
+        };
+
+        /**
+         * マップからマーカーを削除し、投稿データを更新する
+         * @param {string} id - 削除する投稿のID
+         */
+        const deletePost = (id) => {
+            // 配列から投稿を除外
+            posts = posts.filter(post => post.id !== id);
+            savePosts();
+
+            // マップからマーカーを削除
+            if (markers[id]) {
+                map.removeLayer(markers[id]);
+                delete markers[id];
+            }
+        };
+        
+        /**
+         * マップにマーカーと吹き出しを追加する
+         * @param {object} post - 投稿オブジェクト {id, text, lat, lng}
+         */
+        const addMarker = (post) => {
+            // シンプルな円形マーカーを作成
+            const marker = L.circleMarker([post.lat, post.lng], {
+                radius: 8,
+                fillColor: "#3b82f6",
+                color: "#ffffff",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.9
+            }).addTo(map);
+            
+            // 投稿内容を常時表示の吹き出し（ツールチップ）としてバインド
+            marker.bindTooltip(escapeHTML(post.text), {
+                permanent: true,      // 常に表示
+                direction: 'right',   // マーカーの右に表示
+                offset: [10, 0],      // 表示位置を微調整
+                className: 'custom-tooltip' // カスタムCSSクラスを適用
+            });
+            
+            // 削除ボタン用のポップアップ
+            const popupContent = `
+                <div class="p-2 text-center">
+                    <button class="delete-post-btn text-red-500 hover:text-red-700 font-semibold" data-id="${post.id}">
+                        この投稿を削除
+                    </button>
+                </div>
+            `;
+            marker.bindPopup(popupContent);
+            
+            // マーカーを管理オブジェクトに追加
+            markers[post.id] = marker;
+
+            // ポップアップが開かれた際に、削除ボタンのイベントリスナーを設定
+            marker.on('popupopen', () => {
+                const deleteBtn = document.querySelector(`.delete-post-btn[data-id='${post.id}']`);
+                if (deleteBtn) {
+                    deleteBtn.onclick = () => {
+                        map.closePopup(); // 削除前にポップアップを閉じる
+                        deletePost(post.id);
+                    };
+                }
+            });
+        };
+        
+        /**
+         * LocalStorageから投稿を読み込んでマップに表示する
+         */
+        const loadPosts = () => {
+            const savedPosts = localStorage.getItem('map-sns-posts');
+            if (savedPosts) {
+                posts = JSON.parse(savedPosts);
+                posts.forEach(addMarker);
+            }
+        };
+
+
+        // --- イベントリスナー設定 ---
+
+        // マップクリックで投稿モーダルを開く
+        map.on('click', (e) => openModal(e.latlng));
+
+        // 投稿キャンセルボタン
+        cancelPostBtn.addEventListener('click', closeModal);
+
+        // 投稿実行ボタン
+        submitPostBtn.addEventListener('click', () => {
+            const text = postText.value.trim();
+            if (!text) {
+                alert('メッセージを入力してください。');
+                return;
+            }
+            if (!tempLatLng) {
+                alert('場所が選択されていません。');
+                return;
+            }
+
+            const newPost = {
+                id: Date.now().toString(), // ユニークなIDを生成
+                text: text,
+                lat: tempLatLng.lat,
+                lng: tempLatLng.lng
+            };
+
+            posts.push(newPost);
+            savePosts();
+            addMarker(newPost);
+            closeModal();
+        });
+
+        // --- 初期化処理 ---
+        // DOMの読み込みが完了したら、保存された投稿を読み込む
+        document.addEventListener('DOMContentLoaded', loadPosts);
+
+    </script>
+</body>
+</html>
+
