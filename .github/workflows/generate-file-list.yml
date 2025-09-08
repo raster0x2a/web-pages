@@ -3,7 +3,7 @@ name: Generate Directory Listing
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build:
