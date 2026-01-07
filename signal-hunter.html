@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Hunter Terminal</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "three": "https://esm.sh/three@0.160.0",
+            "lucide-react": "https://esm.sh/lucide-react@0.344.0"
+        }
+    }
+    </script>
+
+    <style>
+        body { margin: 0; background-color: #000; }
+        /* Prevent touch scrolling on mobile for game feel */
+        body { overscroll-behavior: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import * as THREE from 'three';
+        import { 
+            Radio, Settings, Terminal as TerminalIcon, Zap, Target, 
+            Activity, Cpu, Globe, Wifi, ChevronRight, ShieldAlert, 
+            Satellite, Volume2, Lock, Unlock
+        } from 'lucide-react';
+
+        /**
+         * Constants for Signal Detection Logic
+         */
+        const TARGET_FREQ = 1420.405; // Hydrogen Line (HI) in MHz
+        const TARGET_AZ = 284.22;    // Target Azimuth (Degrees)
+        const TARGET_EL = 45.18;     // Target Elevation (Degrees)
+
+        const App = () => {
+            // --- Game State ---
+            const [gameState, setGameState] = useState('BOOT'); // BOOT, SCANNING, DECODING, CONTACT
+            const [frequency, setFrequency] = useState(1415.0);
+            const [azimuth, setAzimuth] = useState(180.0);
+            const [elevation, setElevation] = useState(20.0);
+            const [snr, setSnr] = useState(0);
+            const [progress, setProgress] = useState(0);
+            const [logs, setLogs] = useState([]);
+            const [isLocked, setIsLocked] = useState(false);
+            const [decodedMessage, setDecodedMessage] = useState("");
+
+            const canvasRef = useRef(null);
+            const scopeRef = useRef(null);
+            const requestRef = useRef();
+
+            // --- Helpers ---
+            const addLog = (text, type = "default") => {
+                setLogs(prev => [{
+                id: Date.now(),
+                time: new Date().toLocaleTimeString('ja-JP', { hour12: false }),
+                text,
+                type
+                }, ...prev].slice(20));
+            };
+
+            // --- Signal Calculation ---
+            useEffect(() => {
+                if (gameState === 'BOOT') return;
+
+                const fDiff = Math.abs(frequency - TARGET_FREQ);
+                const posDiff = Math.sqrt(
+                Math.pow(azimuth - TARGET_AZ, 2) + 
+                Math.pow(elevation - TARGET_EL, 2)
+                );
+
+                // Calculate SNR based on proximity
+                // Very narrow window for discovery
+                let currentSnr = 0;
+                if (fDiff < 0.5 && posDiff < 5) {
+                const fFactor = Math.max(0, 1 - (fDiff / 0.1)); // Sharp peak
+                const pFactor = Math.max(0, 1 - (posDiff / 2.0));
+                currentSnr = (fFactor * 0.8 + pFactor * 0.2) * 100;
+                }
+                setSnr(currentSnr);
+
+                if (currentSnr > 90 && !isLocked) {
+                setIsLocked(true);
+                addLog("Strong narrowband signal detected. Carrier locking...", "warn");
+                } else if (currentSnr < 70 && isLocked) {
+                setIsLocked(false);
+                addLog("Signal lock lost. Re-tuning required.", "error");
+                }
+            }, [frequency, azimuth, elevation, gameState]);
+
+            // --- Progress / Decoding Flow ---
+            useEffect(() => {
+                let timer;
+                if (isLocked && gameState === 'SCANNING') {
+                timer = setInterval(() => {
+                    setProgress(prev => {
+                    if (prev >= 100) {
+                        clearInterval(timer);
+                        setGameState('DECODING');
+                        addLog("Data packet capture complete. Integrity check: 100%.", "success");
+                        return 100;
+                    }
+                    return prev + 0.5;
+                    });
+                }, 50);
+                } else {
+                if (progress < 100) setProgress(prev => Math.max(0, prev - 1));
+                }
+                return () => clearInterval(timer);
+            }, [isLocked, gameState, progress]);
+
+            // --- Initial Boot Sequence ---
+            useEffect(() => {
+                const sequence = [
+                { msg: "DSN (Deep Space Network) Terminal Initializing...", delay: 500 },
+                { msg: "Loading cryptographic modules...", delay: 1200 },
+                { msg: "Connecting to VLA (Very Large Array) baseline...", delay: 2000 },
+                { msg: "System Ready. Start scanning L-Band spectrum.", delay: 2800, action: () => setGameState('SCANNING') }
+                ];
+
+                sequence.forEach((step, i) => {
+                setTimeout(() => {
+                    addLog(step.msg, "system");
+                    if (step.action) step.action();
+                }, step.delay);
+                });
+            }, []);
+
+            // --- Three.js Implementation ---
+            useEffect(() => {
+                if (!canvasRef.current || gameState === 'BOOT') return;
+
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(60, canvasRef.current.clientWidth / canvasRef.current.clientHeight, 0.1, 2000);
+                const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, antialias: true, alpha: true });
+                
+                renderer.setSize(canvasRef.current.clientWidth, canvasRef.current.clientHeight);
+                camera.position.z = 100;
+
+                // Starfield Generation
+                const starsGeo = new THREE.BufferGeometry();
+                const starsPos = [];
+                const starsColor = [];
+                for (let i = 0; i < 8000; i++) {
+                starsPos.push((Math.random() - 0.5) * 1500);
+                starsPos.push((Math.random() - 0.5) * 1500);
+                starsPos.push((Math.random() - 0.5) * 1500);
+                const intensity = Math.random();
+                starsColor.push(intensity, intensity, intensity);
+                }
+                starsGeo.setAttribute('position', new THREE.Float32BufferAttribute(starsPos, 3));
+                starsGeo.setAttribute('color', new THREE.Float32BufferAttribute(starsColor, 3));
+                const starsMat = new THREE.PointsMaterial({ size: 1.2, vertexColors: true, transparent: true, opacity: 0.8 });
+                const starField = new THREE.Points(starsGeo, starsMat);
+                scene.add(starField);
+
+                // Target Visual (Distant Star)
+                const targetGeo = new THREE.SphereGeometry(3, 32, 32);
+                const targetMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true });
+                const targetMarker = new THREE.Mesh(targetGeo, targetMat);
+                
+                // Map AZ/EL to 3D Coordinates
+                const updateTargetPos = () => {
+                const phi = (90 - TARGET_EL) * (Math.PI / 180);
+                const theta = (TARGET_AZ) * (Math.PI / 180);
+                targetMarker.position.set(
+                    500 * Math.sin(phi) * Math.cos(theta),
+                    500 * Math.cos(phi),
+                    500 * Math.sin(phi) * Math.sin(theta)
+                );
+                };
+                updateTargetPos();
+                scene.add(targetMarker);
+
+                // Viewport Pointer
+                const pointerGeo = new THREE.RingGeometry(15, 16, 32);
+                const pointerMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+                const pointer = new THREE.Mesh(pointerGeo, pointerMat);
+                scene.add(pointer);
+
+                const animate = () => {
+                starField.rotation.y += 0.0001;
+                
+                // Update Camera based on user AZ/EL input to simulate telescope steering
+                const phi = (90 - elevation) * (Math.PI / 180);
+                const theta = (azimuth) * (Math.PI / 180);
+                
+                const targetLookAt = new THREE.Vector3(
+                    Math.sin(phi) * Math.cos(theta),
+                    Math.cos(phi),
+                    Math.sin(phi) * Math.sin(theta)
+                );
+                camera.lookAt(targetLookAt.multiplyScalar(500));
+                
+                pointer.position.copy(targetLookAt.normalize().multiplyScalar(100));
+                pointer.lookAt(0,0,0);
+
+                renderer.render(scene, camera);
+                requestRef.current = requestAnimationFrame(animate);
+                };
+
+                animate();
+
+                const handleResize = () => {
+                if (!canvasRef.current) return;
+                camera.aspect = canvasRef.current.clientWidth / canvasRef.current.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvasRef.current.clientWidth, canvasRef.current.clientHeight);
+                };
+                window.addEventListener('resize', handleResize);
+
+                return () => {
+                cancelAnimationFrame(requestRef.current);
+                window.removeEventListener('resize', handleResize);
+                };
+            }, [gameState, azimuth, elevation]);
+
+            // --- Oscilloscope Drawing ---
+            useEffect(() => {
+                if (!scopeRef.current) return;
+                const ctx = scopeRef.current.getContext('2d');
+                let frame = 0;
+
+                const draw = () => {
+                frame++;
+                const w = scopeRef.current.width;
+                const h = scopeRef.current.height;
+                
+                ctx.fillStyle = 'rgba(0, 10, 0, 0.2)';
+                ctx.fillRect(0, 0, w, h);
+
+                ctx.beginPath();
+                ctx.strokeStyle = snr > 80 ? '#00ff00' : '#004400';
+                ctx.lineWidth = 1;
+
+                for (let x = 0; x < w; x++) {
+                    // Base Noise
+                    let y = (Math.random() - 0.5) * (20 - snr / 10);
+                    
+                    // Signal injection
+                    if (snr > 0) {
+                    const shift = (frequency - TARGET_FREQ) * 1000;
+                    y += Math.sin((x + frame + shift) * 0.1) * (snr / 2);
+                    // Modulated data burst
+                    if (isLocked) {
+                        y += Math.sin((x + frame) * 0.5) * (Math.random() * 10);
+                    }
+                    }
+
+                    if (x === 0) ctx.moveTo(x, h/2 + y);
+                    else ctx.lineTo(x, h/2 + y);
+                }
+                ctx.stroke();
+                requestRef.current = requestAnimationFrame(draw);
+                };
+
+                draw();
+                return () => cancelAnimationFrame(requestRef.current);
+            }, [snr, frequency, isLocked]);
+
+            // --- Decryption Simulation ---
+            const startDecryption = () => {
+                addLog("Initializing heuristic decryption...", "system");
+                setTimeout(() => {
+                addLog("Detecting binary structure: Non-terrestrial pattern.", "warn");
+                setTimeout(() => {
+                    setGameState('CONTACT');
+                    setDecodedMessage("VOYAGER 1 RESPONSE RECEIVED: 'WE ARE HERE. YOUR MATH IS UNIVERSAL. WE WAIT AT THE CROSSING.'");
+                    addLog("DECODING SUCCESSFUL. CONTACT ESTABLISHED.", "success");
+                }, 2000);
+                }, 1500);
+            };
+
+            return (
+                <div className="min-h-screen bg-black text-emerald-500 font-mono text-sm overflow-hidden flex flex-col md:p-4 select-none">
+                {/* HUD Header */}
+                <header className="border-b border-emerald-900/50 p-3 mb-2 flex justify-between items-center bg-zinc-900/20 backdrop-blur">
+                    <div className="flex items-center gap-3">
+                    <Satellite className="w-6 h-6 animate-pulse" />
+                    <div>
+                        <h1 className="text-lg font-black tracking-tighter uppercase flex items-center gap-2">
+                        Signal Hunter <span className="text-[10px] bg-emerald-900/50 px-1 rounded font-normal">v2.5-ALPHA</span>
+                        </h1>
+                        <p className="text-[10px] opacity-60">STATION: TOKYO-NORTH-ARRAY // STATUS: {gameState}</p>
+                    </div>
+                    </div>
+                    
+                    <div className="hidden md:flex gap-6 text-[11px]">
+                    <div className="flex flex-col items-end">
+                        <span className="opacity-50">LATENCY</span>
+                        <span className="text-emerald-300">12ms</span>
+                    </div>
+                    <div className="flex flex-col items-end border-l border-emerald-900/50 pl-6">
+                        <span className="opacity-50">SIGNAL INTEGRITY</span>
+                        <span className={snr > 80 ? 'text-yellow-400' : 'text-emerald-300'}>
+                        {snr.toFixed(1)} dBm
+                        </span>
+                    </div>
+                    </div>
+                </header>
+
+                {/* Main Interface */}
+                <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2 h-full min-h-0">
+                    
+                    {/* Left Col: Visuals */}
+                    <div className="lg:col-span-8 flex flex-col gap-2 min-h-[300px]">
+                    {/* Telescope View */}
+                    <div className="relative flex-1 bg-zinc-950 border border-emerald-900/30 rounded overflow-hidden">
+                        <canvas ref={canvasRef} className="w-full h-full" />
+                        
+                        {/* HUD Overlay */}
+                        <div className="absolute top-4 left-4 pointer-events-none flex flex-col gap-2">
+                        <div className="bg-black/60 p-2 border border-emerald-900/50 rounded flex items-center gap-2">
+                            <Target className="w-4 h-4 text-emerald-400" />
+                            <div className="text-[10px]">
+                            <div>AIM_COORDS</div>
+                            <div className="text-emerald-300">AZ:{azimuth.toFixed(2)}° EL:{elevation.toFixed(2)}°</div>
+                            </div>
+                        </div>
+                        </div>
+
+                        {isLocked && (
+                        <div className="absolute inset-0 border-4 border-emerald-500/20 animate-pulse pointer-events-none flex items-center justify-center">
+                            <div className="bg-emerald-900/80 px-6 py-2 border border-emerald-400 text-white font-bold tracking-[1em] text-xs">
+                            SIGNAL LOCK
+                            </div>
+                        </div>
+                        )}
+                    </div>
+
+                    {/* Oscilloscope View */}
+                    <div className="h-32 bg-black border border-emerald-900/30 rounded relative flex items-center justify-center">
+                        <canvas ref={scopeRef} className="w-full h-full opacity-80" width={1000} height={150} />
+                        <div className="absolute top-2 left-2 text-[9px] flex items-center gap-1 opacity-50">
+                        <Activity className="w-3 h-3" /> SPECTROGRAM_L_BAND
+                        </div>
+                        <div className="absolute bottom-2 right-2 text-[9px] flex items-center gap-1 opacity-50 uppercase">
+                        Ch-A: 1.42GHz // Offset: {(frequency - TARGET_FREQ).toFixed(3)}
+                        </div>
+                    </div>
+                    </div>
+
+                    {/* Right Col: Controls & Terminal */}
+                    <div className="lg:col-span-4 flex flex-col gap-2 min-h-0">
+                    
+                    {/* Controls Panel */}
+                    <section className="bg-zinc-900/40 p-4 border border-emerald-900/30 rounded flex flex-col gap-5 shadow-inner">
+                        <div className="flex items-center justify-between">
+                        <h2 className="text-xs font-bold tracking-widest flex items-center gap-2">
+                            <Settings className="w-3 h-3" /> ANTENNA_CONTROL
+                        </h2>
+                        {isLocked ? <Lock className="w-3 h-3 text-yellow-500" /> : <Unlock className="w-3 h-3 opacity-30" />}
+                        </div>
+
+                        {/* Frequency */}
+                        <div className="space-y-1">
+                        <div className="flex justify-between text-[10px]">
+                            <span>TUNING (1400.0 - 1440.0 MHz)</span>
+                            <span className="text-white font-bold">{frequency.toFixed(3)} MHz</span>
+                        </div>
+                        <input 
+                            type="range" min="1400" max="1440" step="0.001" 
+                            value={frequency} 
+                            onChange={(e) => setFrequency(parseFloat(e.target.value))}
+                            className="w-full h-1 bg-emerald-950 appearance-none cursor-crosshair accent-emerald-400"
+                        />
+                        </div>
+
+                        {/* Azimuth / Elevation */}
+                        <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-[10px] opacity-70 uppercase">Azimuth</label>
+                            <div className="flex items-center bg-black border border-emerald-900/50 rounded overflow-hidden">
+                            <input 
+                                type="number" value={azimuth.toFixed(2)} 
+                                onChange={(e) => setAzimuth(Number(e.target.value))}
+                                className="w-full bg-transparent p-1.5 text-center text-xs focus:outline-none text-white"
+                            />
+                            <span className="p-1.5 text-[10px] bg-emerald-900/20">°</span>
+                            </div>
+                            <input 
+                            type="range" min="0" max="360" step="0.1" value={azimuth}
+                            onChange={(e) => setAzimuth(parseFloat(e.target.value))}
+                            className="w-full h-1 bg-emerald-950 appearance-none accent-emerald-600"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] opacity-70 uppercase">Elevation</label>
+                            <div className="flex items-center bg-black border border-emerald-900/50 rounded overflow-hidden">
+                            <input 
+                                type="number" value={elevation.toFixed(2)} 
+                                onChange={(e) => setElevation(Number(e.target.value))}
+                                className="w-full bg-transparent p-1.5 text-center text-xs focus:outline-none text-white"
+                            />
+                            <span className="p-1.5 text-[10px] bg-emerald-900/20">°</span>
+                            </div>
+                            <input 
+                            type="range" min="0" max="90" step="0.1" value={elevation}
+                            onChange={(e) => setElevation(parseFloat(e.target.value))}
+                            className="w-full h-1 bg-emerald-950 appearance-none accent-emerald-600"
+                            />
+                        </div>
+                        </div>
+
+                        {/* Buffer Bar */}
+                        <div className="space-y-1">
+                        <div className="flex justify-between text-[10px] items-center">
+                            <span className="flex items-center gap-1 opacity-70"><Cpu className="w-3 h-3" /> DATA_ACQUISITION</span>
+                            <span className={progress >= 100 ? 'text-emerald-400' : 'text-zinc-500'}>
+                            {progress.toFixed(1)}%
+                            </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                            <div 
+                            className="h-full bg-emerald-500 transition-all duration-100 ease-linear shadow-[0_0_8px_#10b981]" 
+                            style={{ width: `${progress}%` }} 
+                            />
+                        </div>
+                        </div>
+
+                        {gameState === 'DECODING' && (
+                        <button 
+                            onClick={startDecryption}
+                            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-black font-black rounded text-xs uppercase transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <ShieldAlert className="w-4 h-4" /> Start Heuristic Decrypt
+                        </button>
+                        )}
+                    </section>
+
+                    {/* Terminal / Log Output */}
+                    <section className="flex-1 bg-zinc-950 border border-emerald-900/30 rounded flex flex-col min-h-[200px] overflow-hidden">
+                        <div className="bg-emerald-900/10 p-2 flex items-center gap-2 border-b border-emerald-900/30">
+                        <TerminalIcon className="w-3 h-3" />
+                        <span className="text-[9px] font-bold tracking-widest opacity-80 uppercase">Console_Output</span>
+                        </div>
+                        
+                        <div className="flex-1 p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-emerald-900 space-y-1.5">
+                        {gameState === 'CONTACT' && (
+                            <div className="mb-4 p-3 bg-emerald-900/20 border border-emerald-500/50 text-white rounded animate-in fade-in duration-1000">
+                            <div className="flex items-center gap-2 mb-2 text-emerald-400 font-bold border-b border-emerald-500/30 pb-1">
+                                <Wifi className="w-3 h-3" /> DECODED_DATA_STREAM
+                            </div>
+                            <p className="text-sm italic leading-relaxed text-emerald-100">
+                                "{decodedMessage}"
+                            </p>
+                            </div>
+                        )}
+
+                        {logs.map((log) => (
+                            <div key={log.id} className="flex gap-2 text-[10px] leading-tight">
+                            <span className="opacity-40 whitespace-nowrap">[{log.time}]</span>
+                            <span className={
+                                log.type === "success" ? "text-sky-400" : 
+                                log.type === "warn" ? "text-yellow-500" : 
+                                log.type === "error" ? "text-rose-500" : 
+                                log.type === "system" ? "text-emerald-700 font-bold" : "text-emerald-400"
+                            }>
+                                {log.type === "success" ? ">>> " : log.type === "warn" ? "!!! " : log.type === "system" ? "# " : "> "}
+                                {log.text}
+                            </span>
+                            </div>
+                        ))}
+                        </div>
+                    </section>
+                    </div>
+                </main>
+
+                {/* Global Style Overrides */}
+                <style>{`
+                    input[type="range"]::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    height: 14px;
+                    width: 6px;
+                    background: #34d399;
+                    cursor: pointer;
+                    border-radius: 2px;
+                    box-shadow: 0 0 5px rgba(52, 211, 153, 0.5);
+                    }
+                    ::-webkit-scrollbar { width: 4px; }
+                    ::-webkit-scrollbar-track { background: rgba(0,0,0,0); }
+                    ::-webkit-scrollbar-thumb { background: #064e3b; border-radius: 10px; }
+                `}</style>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
