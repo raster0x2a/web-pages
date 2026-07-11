@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ナンプレ</title>
+<style>
+  :root{
+    --blue:#347fe6;
+    --blue-dark:#2368c9;
+    --pale:#e8f4ff;
+    --grid:#202020;
+    --thin:#555;
+    --selected:#dcecff;
+    --same:#edf5ff;
+    --error:#ffd8d8;
+    --note:#4b5563;
+    --bg:#fff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:#222;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  }
+  .app{
+    width:min(94vw,760px);
+    margin:18px auto 32px;
+    user-select:none;
+  }
+  .status{
+    display:grid;
+    grid-template-columns:auto 1fr auto auto;
+    gap:14px;
+    align-items:center;
+    padding:12px 16px;
+    border:1px solid #b8d9f3;
+    border-radius:10px;
+    background:#e8f4ff;
+    box-shadow:0 1px 4px rgba(0,0,0,.08);
+    font-weight:700;
+  }
+  .status-label{font-size:clamp(18px,3vw,28px)}
+  .toggle{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    min-width:180px;
+    border:1px solid #c4cbd3;
+    border-radius:999px;
+    padding:8px 14px;
+    background:#fff;
+    box-shadow:0 2px 5px rgba(0,0,0,.12);
+    cursor:pointer;
+    font-weight:700;
+  }
+  .toggle .dot{
+    width:18px;height:18px;border-radius:50%;
+    background:#b7bec7; box-shadow:inset 0 1px 2px rgba(0,0,0,.15);
+  }
+  .toggle.on .dot{background:#44a55b}
+  .remaining{white-space:nowrap;font-size:clamp(16px,2.5vw,24px)}
+  .timer{
+    min-width:72px;text-align:right;
+    color:var(--blue);font-size:clamp(20px,3vw,30px);
+    font-variant-numeric:tabular-nums;
+  }
+
+  .number-bar{
+    display:grid;
+    grid-template-columns:repeat(9,1fr);
+    gap:8px;
+    margin:10px 0 12px;
+  }
+  .number-btn{
+    border:2px solid var(--blue-dark);
+    border-radius:7px;
+    background:var(--blue);
+    color:#fff;
+    font-size:clamp(24px,4vw,38px);
+    line-height:1;
+    padding:9px 0;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:inset 0 -2px 0 rgba(0,0,0,.12);
+  }
+  .number-btn:active{transform:translateY(1px)}
+  .number-btn.disabled{opacity:.35}
+
+  .board{
+    width:100%;
+    aspect-ratio:1/1;
+    display:grid;
+    grid-template-columns:repeat(9,1fr);
+    border:6px solid var(--grid);
+    background:var(--grid);
+  }
+  .cell{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fff;
+    border-right:1px solid var(--thin);
+    border-bottom:1px solid var(--thin);
+    font-size:clamp(24px,6.3vw,50px);
+    font-weight:500;
+    cursor:pointer;
+  }
+  .cell:nth-child(3n){border-right:5px solid var(--grid)}
+  .cell:nth-child(9n){border-right:0}
+  .cell:nth-child(n+19):nth-child(-n+27),
+  .cell:nth-child(n+46):nth-child(-n+54){border-bottom:5px solid var(--grid)}
+  .cell:nth-child(n+73){border-bottom:0}
+
+  .cell.given{font-weight:700;color:#3b3b3b}
+  .cell.selected{background:var(--selected)}
+  .cell.related{background:var(--same)}
+  .cell.same-value{background:#cfe3ff}
+  .cell.error{background:var(--error);color:#b00020}
+  .cell .notes{
+    position:absolute; inset:2px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(3,1fr);
+    font-size:clamp(8px,1.6vw,14px);
+    color:var(--note);
+    font-weight:600;
+    line-height:1;
+  }
+  .cell .notes span{
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .memo-title{
+    margin:14px 4px 7px;
+    font-size:clamp(16px,2.8vw,24px);
+    color:#666;
+  }
+  .memo-bar{
+    display:grid;
+    grid-template-columns:repeat(9,1fr);
+    gap:8px;
+  }
+  .memo-btn{
+    border:2px solid #cbd2da;
+    border-radius:7px;
+    background:#f7f9fb;
+    color:#4b5563;
+    font-size:clamp(20px,3vw,30px);
+    padding:9px 0;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .memo-btn.active{
+    background:#ffefb8;
+    border-color:#e4ac27;
+  }
+
+  .actions{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:12px;
+    margin-top:18px;
+  }
+  .action{
+    border:0;
+    border-radius:12px;
+    color:white;
+    font-size:clamp(16px,2.8vw,25px);
+    font-weight:800;
+    padding:15px 4px;
+    cursor:pointer;
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.12);
+  }
+  .erase{background:#ef5747}
+  .undo,.redo{background:#4b95e9}
+  .check{background:#f2a331}
+  .save{background:#63b255}
+  .action:active{transform:translateY(1px)}
+
+  .message{
+    min-height:28px;
+    margin-top:14px;
+    text-align:center;
+    font-weight:700;
+    font-size:18px;
+  }
+  .help{
+    margin-top:8px;
+    color:#6b7280;
+    text-align:center;
+    font-size:13px;
+  }
+  @media (max-width:600px){
+    .app{width:96vw;margin-top:10px}
+    .status{
+      grid-template-columns:auto 1fr auto;
+      gap:8px;padding:10px;
+    }
+    .status-label{grid-row:1;grid-column:1}
+    .toggle{grid-row:1;grid-column:2;min-width:0;padding:7px 9px}
+    .remaining{grid-row:1;grid-column:3}
+    .timer{grid-row:2;grid-column:1/4;text-align:right;font-size:22px}
+    .number-bar,.memo-bar{gap:4px}
+    .actions{gap:6px}
+    .action{border-radius:9px;padding:13px 2px;font-size:15px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="status">
+    <div class="status-label">確定数字</div>
+    <button id="sameMode" class="toggle" type="button" aria-pressed="false">
+      <span class="dot"></span>
+      <span>同番連続入力</span>
+      <strong>OFF</strong>
+    </button>
+    <div class="remaining">残りのマス: <span id="remaining">57</span></div>
+    <div class="timer" id="timer">0:00</div>
+  </div>
+
+  <div id="numberBar" class="number-bar"></div>
+  <div id="board" class="board" aria-label="数独盤面"></div>
+
+  <div class="memo-title">メモ用数字</div>
+  <div id="memoBar" class="memo-bar"></div>
+
+  <div class="actions">
+    <button class="action erase" id="eraseBtn">消す</button>
+    <button class="action undo" id="undoBtn">戻す</button>
+    <button class="action redo" id="redoBtn">進む</button>
+    <button class="action check" id="checkBtn">チェック</button>
+    <button class="action save" id="saveBtn">セーブ</button>
+  </div>
+
+  <div id="message" class="message"></div>
+  <div class="help">数字キーで入力、Mでメモ切替、Backspace/Deleteで消去、Ctrl+Z/Ctrl+Yで戻す・進む</div>
+</div>
+
+<script>
+(() => {
+  const puzzle = [
+    [0,0,0,0,0,1,2,5,0],
+    [1,0,0,0,3,0,7,0,0],
+    [5,3,0,0,0,9,0,0,0],
+    [8,0,7,0,0,0,0,0,0],
+    [0,2,0,0,0,0,0,4,0],
+    [0,0,0,0,0,0,9,0,5],
+    [0,0,0,4,0,0,0,3,6],
+    [0,0,1,0,6,0,0,0,9],
+    [0,6,4,8,0,0,0,0,0]
+  ];
+
+  const solution = solveSudoku(puzzle.map(r => [...r]));
+  const boardEl = document.getElementById('board');
+  const numberBar = document.getElementById('numberBar');
+  const memoBar = document.getElementById('memoBar');
+  const remainingEl = document.getElementById('remaining');
+  const timerEl = document.getElementById('timer');
+  const messageEl = document.getElementById('message');
+  const sameModeBtn = document.getElementById('sameMode');
+
+  let cells = puzzle.flat().map((v, i) => ({
+    value: v || 0,
+    given: v !== 0,
+    notes: new Set(),
+    error: false
+  }));
+  let selected = null;
+  let memoMode = false;
+  let sameMode = false;
+  let history = [];
+  let future = [];
+  let elapsed = 0;
+  let timerHandle = null;
+
+  function solveSudoku(grid){
+    const findEmpty = () => {
+      for(let r=0;r<9;r++) for(let c=0;c<9;c++) if(grid[r][c]===0) return [r,c];
+      return null;
+    };
+    const valid = (r,c,n) => {
+      for(let i=0;i<9;i++){
+        if(grid[r][i]===n || grid[i][c]===n) return false;
+      }
+      const br=Math.floor(r/3)*3, bc=Math.floor(c/3)*3;
+      for(let rr=br;rr<br+3;rr++) for(let cc=bc;cc<bc+3;cc++) if(grid[rr][cc]===n) return false;
+      return true;
+    };
+    const dfs = () => {
+      const pos=findEmpty();
+      if(!pos) return true;
+      const [r,c]=pos;
+      for(let n=1;n<=9;n++){
+        if(valid(r,c,n)){
+          grid[r][c]=n;
+          if(dfs()) return true;
+          grid[r][c]=0;
+        }
+      }
+      return false;
+    };
+    dfs();
+    return grid;
+  }
+
+  function snapshot(){
+    return cells.map(c => ({
+      value:c.value, given:c.given, notes:[...c.notes], error:c.error
+    }));
+  }
+  function restore(state){
+    cells = state.map(c => ({
+      value:c.value, given:c.given, notes:new Set(c.notes), error:c.error
+    }));
+    render();
+  }
+  function commit(){
+    history.push(snapshot());
+    if(history.length > 200) history.shift();
+    future = [];
+  }
+
+  function render(){
+    boardEl.innerHTML = '';
+    const selectedValue = selected !== null ? cells[selected].value : 0;
+    cells.forEach((cell, i) => {
+      const r=Math.floor(i/9), c=i%9;
+      const d=document.createElement('div');
+      d.className='cell';
+      d.dataset.index=i;
+      if(cell.given) d.classList.add('given');
+      if(cell.error) d.classList.add('error');
+
+      if(selected !== null){
+        const sr=Math.floor(selected/9), sc=selected%9;
+        const sameBox=Math.floor(r/3)===Math.floor(sr/3) && Math.floor(c/3)===Math.floor(sc/3);
+        if(i===selected) d.classList.add('selected');
+        else if(r===sr || c===sc || sameBox) d.classList.add('related');
+        if(selectedValue && cell.value===selectedValue) d.classList.add('same-value');
+      }
+
+      if(cell.value){
+        d.textContent=cell.value;
+      }else if(cell.notes.size){
+        const notes=document.createElement('div');
+        notes.className='notes';
+        for(let n=1;n<=9;n++){
+          const s=document.createElement('span');
+          s.textContent=cell.notes.has(n)?n:'';
+          notes.appendChild(s);
+        }
+        d.appendChild(notes);
+      }
+      d.addEventListener('click', () => {
+        selected=i;
+        startTimer();
+        render();
+      });
+      boardEl.appendChild(d);
+    });
+
+    const rem = cells.filter(c => !c.value).length;
+    remainingEl.textContent = rem;
+    updateNumberAvailability();
+    document.querySelectorAll('.memo-btn').forEach(b => b.classList.toggle('active', memoMode));
+  }
+
+  function makeBars(){
+    for(let n=1;n<=9;n++){
+      const b=document.createElement('button');
+      b.className='number-btn';
+      b.textContent=n;
+      b.type='button';
+      b.dataset.n=n;
+      b.addEventListener('click',()=>inputNumber(n,false));
+      numberBar.appendChild(b);
+
+      const m=document.createElement('button');
+      m.className='memo-btn';
+      m.textContent=n;
+      m.type='button';
+      m.dataset.n=n;
+      m.addEventListener('click',()=>inputNumber(n,true));
+      memoBar.appendChild(m);
+    }
+  }
+
+  function inputNumber(n, forceMemo){
+    if(selected===null || cells[selected].given) return;
+    startTimer();
+    commit();
+    cells.forEach(c=>c.error=false);
+    const useMemo = forceMemo || memoMode;
+
+    if(useMemo){
+      if(cells[selected].value) cells[selected].value=0;
+      if(cells[selected].notes.has(n)) cells[selected].notes.delete(n);
+      else cells[selected].notes.add(n);
+    }else{
+      cells[selected].value=n;
+      cells[selected].notes.clear();
+      removePeerNotes(selected,n);
+      if(sameMode) moveToNextEmpty();
+    }
+    messageEl.textContent='';
+    render();
+    checkCompletion();
+  }
+
+  function removePeerNotes(index,n){
+    const r=Math.floor(index/9), c=index%9;
+    cells.forEach((cell,i)=>{
+      const rr=Math.floor(i/9), cc=i%9;
+      const sameBox=Math.floor(rr/3)===Math.floor(r/3)&&Math.floor(cc/3)===Math.floor(c/3);
+      if(rr===r||cc===c||sameBox) cell.notes.delete(n);
+    });
+  }
+
+  function moveToNextEmpty(){
+    if(selected===null) return;
+    for(let k=1;k<=81;k++){
+      const i=(selected+k)%81;
+      if(!cells[i].given && !cells[i].value){ selected=i; return; }
+    }
+  }
+
+  function erase(){
+    if(selected===null || cells[selected].given) return;
+    commit();
+    cells[selected].value=0;
+    cells[selected].notes.clear();
+    cells[selected].error=false;
+    messageEl.textContent='';
+    render();
+  }
+
+  function undo(){
+    if(!history.length) return;
+    future.push(snapshot());
+    restore(history.pop());
+  }
+  function redo(){
+    if(!future.length) return;
+    history.push(snapshot());
+    restore(future.pop());
+  }
+
+  function check(){
+    let wrong=0, empty=0;
+    cells.forEach((cell,i)=>{
+      const r=Math.floor(i/9), c=i%9;
+      cell.error = !!cell.value && cell.value !== solution[r][c];
+      if(cell.error) wrong++;
+      if(!cell.value) empty++;
+    });
+    if(wrong) messageEl.textContent=`${wrong}マスに誤りがあります`;
+    else if(empty) messageEl.textContent='現在入力されている数字に誤りはありません';
+    else messageEl.textContent='完成です！';
+    render();
+  }
+
+  function checkCompletion(){
+    if(cells.every(c=>c.value)){
+      const ok=cells.every((c,i)=>c.value===solution[Math.floor(i/9)][i%9]);
+      if(ok){
+        stopTimer();
+        messageEl.textContent='完成です！';
+      }
+    }
+  }
+
+  function save(){
+    localStorage.setItem('sudoku-single-file-save', JSON.stringify({
+      cells: cells.map(c=>({value:c.value,given:c.given,notes:[...c.notes],error:false})),
+      elapsed, selected
+    }));
+    messageEl.textContent='保存しました';
+  }
+
+  function load(){
+    try{
+      const raw=localStorage.getItem('sudoku-single-file-save');
+      if(!raw) return;
+      const data=JSON.parse(raw);
+      if(!Array.isArray(data.cells)||data.cells.length!==81) return;
+      cells=data.cells.map(c=>({
+        value:Number(c.value)||0,
+        given:!!c.given,
+        notes:new Set(c.notes||[]),
+        error:false
+      }));
+      elapsed=Number(data.elapsed)||0;
+      selected=Number.isInteger(data.selected)?data.selected:null;
+      updateTimer();
+      messageEl.textContent='保存データを読み込みました';
+    }catch(e){}
+  }
+
+  function updateNumberAvailability(){
+    for(let n=1;n<=9;n++){
+      const count=cells.filter(c=>c.value===n).length;
+      const b=numberBar.querySelector(`[data-n="${n}"]`);
+      if(b) b.classList.toggle('disabled',count>=9);
+    }
+  }
+
+  function startTimer(){
+    if(timerHandle) return;
+    timerHandle=setInterval(()=>{elapsed++;updateTimer();},1000);
+  }
+  function stopTimer(){
+    clearInterval(timerHandle);
+    timerHandle=null;
+  }
+  function updateTimer(){
+    const m=Math.floor(elapsed/60), s=elapsed%60;
+    timerEl.textContent=`${m}:${String(s).padStart(2,'0')}`;
+  }
+
+  sameModeBtn.addEventListener('click',()=>{
+    sameMode=!sameMode;
+    sameModeBtn.classList.toggle('on',sameMode);
+    sameModeBtn.setAttribute('aria-pressed',String(sameMode));
+    sameModeBtn.querySelector('strong').textContent=sameMode?'ON':'OFF';
+  });
+
+  document.getElementById('eraseBtn').addEventListener('click',erase);
+  document.getElementById('undoBtn').addEventListener('click',undo);
+  document.getElementById('redoBtn').addEventListener('click',redo);
+  document.getElementById('checkBtn').addEventListener('click',check);
+  document.getElementById('saveBtn').addEventListener('click',save);
+
+  document.addEventListener('keydown',e=>{
+    if(e.ctrlKey && e.key.toLowerCase()==='z'){e.preventDefault();undo();return}
+    if(e.ctrlKey && e.key.toLowerCase()==='y'){e.preventDefault();redo();return}
+    if(e.key>='1'&&e.key<='9'){inputNumber(Number(e.key),e.shiftKey);return}
+    if(e.key==='Backspace'||e.key==='Delete'||e.key==='0'){e.preventDefault();erase();return}
+    if(e.key.toLowerCase()==='m'){memoMode=!memoMode;render();return}
+    if(selected===null) return;
+    const r=Math.floor(selected/9),c=selected%9;
+    if(e.key==='ArrowUp'&&r>0) selected-=9;
+    else if(e.key==='ArrowDown'&&r<8) selected+=9;
+    else if(e.key==='ArrowLeft'&&c>0) selected-=1;
+    else if(e.key==='ArrowRight'&&c<8) selected+=1;
+    else return;
+    e.preventDefault();render();
+  });
+
+  makeBars();
+  load();
+  render();
+  updateTimer();
+})();
+</script>
+</body>
+</html>
